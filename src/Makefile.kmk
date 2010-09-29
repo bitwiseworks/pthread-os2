@@ -11,38 +11,41 @@
 
 DEPTH = ..
 
-TOOL = GCC3OMF
+BTOOL.aout = GCC3
+BTOOL. = GCC3OMF
 
-LIBRARIES = pthread
+TOOL = $(BTOOL.$(BUILD_AOUT))
 
-pthread_SOURCES = \
+PTHREAD_LIB.debug = pthread_g
+PTHREAD_LIB.release = pthread
+PTHREAD_LIB_TARGET = $(PTHREAD_LIB.$(BUILD_TYPE))
+
+LIBRARIES = $(PTHREAD_LIB_TARGET)
+
+$(PTHREAD_LIB_TARGET)_SOURCES = \
 	my_os2cond.c \
 	my_os2mutex.c \
 	my_os2thread.c \
 	my_os2key.c \
 	my_os2tls.c
 
-pthread_CFLAGS = -Zomf
-pthread_CFLAGS.release = -s -O3 -march=pentium -mcpu=pentium4 -Wall
-pthread_CFLAGS.debug = -g -O0 -DDEBUG_PRINTF
-pthread_LDFLAGS = -Zomf -Zno-fork -Zmap -Zbin-files
-pthread_LDFLAGS.release = -s
-pthread_LDFLAGS.debug = -g
+$(PTHREAD_LIB_TARGET)_CFLAGS =
+$(PTHREAD_LIB_TARGET)_CFLAGS.release = -s -O3 -march=pentium -mtune=pentium4 -Wall
+$(PTHREAD_LIB_TARGET)_CFLAGS.debug = -g -O0 -DDEBUG_PRINTF
+$(PTHREAD_LIB_TARGET)_LDFLAGS = -Zno-fork -Zmap -Zbin-files
+$(PTHREAD_LIB_TARGET)_LDFLAGS.release = -s
+$(PTHREAD_LIB_TARGET)_LDFLAGS.debug = -g
 
-pthread_DEFS = 
-pthread_INCS = 
+$(PTHREAD_LIB_TARGET)_DEFS = 
+$(PTHREAD_LIB_TARGET)_INCS = 
 
-pthread_CLEAN = $(PATH_LIB)/pthread.lib
+$(PTHREAD_LIB_TARGET)_CLEAN = $(PATH_LIB)/$(PTHREAD_LIB_TARGET).a
 
 
 # packaging stuffs
-ifeq ($(BUILD_TYPE),debug)
-  PACKAGE_NAME = pthread-$(subst .,_,$(VERSION))-$(BUILD)-debug.zip
-else
-  PACKAGE_NAME = pthread-$(subst .,_,$(VERSION))-$(BUILD).zip
-endif
+PACKAGE_NAME = $(PTHREAD_LIB.release)-$(subst .,_,$(VERSION))-$(BUILD).zip
 PACKING += $(PATH_ROOT)/dist/$(PACKAGE_NAME)
-OTHER_CLEAN += $(PATH_ROOT)/dist/$(PACKAGE_NAME) 
+OTHER_CLEAN += $(PATH_ROOT)/dist/$(PACKAGE_NAME)
 
 # now include standard code
 include $(PATH_KBUILD)/rules.kMk
@@ -50,10 +53,10 @@ include $(PATH_KBUILD)/rules.kMk
 # here follows standard gnu make inference rules
 
 # final: zip all files!
-$(PATH_ROOT)/dist/$(PACKAGE_NAME): \
-		$(PATH_LIB)/pthread.lib
+$(PATH_ROOT)/dist/$(PACKAGE_NAME): $(INSTARGET_pthread_g) $(INSTARGET_pthread)
 	$(call MSG_L1,Packing $@)
 	$(QUIET)$(MKDIR) -p $(PATH_ROOT)/dist                              
-	$(QUIET)$(RM) -f $@
-	$(QUIET)zip -9q -j $@ *.c *.kmk *.h *.cmd $(PATH_LIB)/* 
+	$(QUIET)$(REDIRECT) -C $(DEPTH) -- zip -9q $@ src/* -x src/*~ 
+	$(QUIET)$(REDIRECT) -C $(PATH_INS) -- zip -9q $@ lib/*
+ 
 

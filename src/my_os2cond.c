@@ -104,7 +104,7 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 }
 
 int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
-			   struct timespec *abstime)
+			   struct timespec const *abstime)
 {
    struct timeb curtime;
    long timeout;

@@ -45,10 +45,12 @@ int pthread_dummy(int ret);
 int pthread_create(pthread_t *,pthread_attr_t *,pthread_handler,void *);
 pthread_t pthread_self(void);
 int pthread_join(  pthread_t thread, pthread_addr_t *status);
+#define pthread_detach( A) pthread_dummy(0)
+
 int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr);
 int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
 int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
-			   struct timespec *abstime);
+			   struct timespec const *abstime);
 int pthread_cond_signal(pthread_cond_t *cond);
 int pthread_cond_broadcast(pthread_cond_t *cond);
 int pthread_cond_destroy(pthread_cond_t *cond);
@@ -63,7 +65,7 @@ void		pthread_cleanup_push (void (*routine) (void *),
 
 #define _REENTRANT			1
 
-#define pthread_equal(A,B) ((A) == (B))
+static int pthread_equal(pthread_t t1,pthread_t t2) { return ( t1 == t2);};
 
 extern int pthread_mutex_init (pthread_mutex_t *, const pthread_mutexattr_t *);
 extern int pthread_mutex_lock (pthread_mutex_t *);
@@ -92,12 +94,20 @@ void  pthread_setprio( int, int);
 #define pthread_mutexattr_init(A) 	0
 #define pthread_mutexattr_destroy(A) 	0
 
-#define PTHREAD_ONCE_INIT -1
 typedef int* pthread_once_t;
+#define PTHREAD_ONCE_INIT ((pthread_once_t)-1)
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void));
 
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
 int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize); 
+
+void pthread_yield(void);
+
+#define PTHREAD_MUTEX_NORMAL 0
+#define PTHREAD_MUTEX_RECURSIVE 1
+#define PTHREAD_MUTEX_ERRORCHECK 2
+#define PTHREAD_MUTEX_DEFAULT  PTHREAD_MUTEX_NORMAL
+#define pthread_mutexattr_settype(A, B) pthread_dummy(0)
 
 #ifdef __cplusplus
 } // extern "C"
