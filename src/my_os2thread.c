@@ -21,12 +21,6 @@
 /* SAFE_MUTEX will not work until the thread structure is up to date */
 #undef SAFE_MUTEX
 
-
-//#include "mysys_priv.h"
-//#if defined(THREAD) && defined(__EMX__)
-//#include <m_string.h>
-//#include <process.h>
-
 #include <types.h>
 #include "pthread.h"
 
@@ -40,11 +34,6 @@ struct pthread_map
   pthread_handler func;
   void *	  param;
 };
-
-//void win_pthread_init(void)
-//{
-//  pthread_mutex_init(&THR_LOCK_thread,NULL);
-//}
 
 /*
 ** We have tried to use '_beginthreadex' instead of '_beginthread' here
@@ -179,5 +168,3 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
   DosExitCritSec();
   return 0;
 }
-
-//#endif // defined(THREAD) && defined(__EMX__)

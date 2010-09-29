@@ -70,7 +70,6 @@ int pthread_cond_signal(pthread_cond_t *cond);
 int pthread_cond_broadcast(pthread_cond_t *cond);
 int pthread_cond_destroy(pthread_cond_t *cond);
 int pthread_attr_init(pthread_attr_t *connect_att);
-int pthread_attr_setstacksize(pthread_attr_t *connect_att,ULONG stack);
 int pthread_attr_setprio(pthread_attr_t *connect_att,int priority);
 int pthread_attr_destroy(pthread_attr_t *connect_att);
 void pthread_exit(void *a);	 /* was #define pthread_exit(A) ExitThread(A)*/
@@ -115,6 +114,9 @@ void  pthread_setprio( int, int);
 #define PTHREAD_ONCE_INIT -1
 typedef int* pthread_once_t;
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void));
+
+int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
+int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize); 
 
 #ifdef __cplusplus
 } // extern "C"

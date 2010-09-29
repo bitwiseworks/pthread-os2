@@ -186,9 +186,21 @@ int pthread_attr_init(pthread_attr_t *connect_att)
   return 0;
 }
 
-int pthread_attr_setstacksize(pthread_attr_t *connect_att, ULONG stack)
+int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize)
 {
-  connect_att->dwStackSize=stack;
+  if (attr)
+    *stacksize = attr->dwStackSize;
+  else
+    return EINVAL;
+  return 0;
+}
+
+int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize)
+{
+  if (attr)
+    attr->dwStackSize = stacksize;
+  else
+    return EINVAL;
   return 0;
 }
 
