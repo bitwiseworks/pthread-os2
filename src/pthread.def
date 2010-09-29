@@ -1,0 +1,46 @@
+LIBRARY pthread INITINSTANCE TERMINSTANCE
+DATA MULTIPLE
+EXPORTS
+  ; segment TEXT32
+  "_pthread_attr_init"                                                  ; magicseg='TEXT32' len=18
+  "_pthread_attr_getstacksize"                                          ; magicseg='TEXT32' len=26
+  "_pthread_attr_setstacksize"                                          ; magicseg='TEXT32' len=26
+  "_pthread_attr_setprio"                                               ; magicseg='TEXT32' len=21
+  "_pthread_attr_destroy"                                               ; magicseg='TEXT32' len=21
+  "_pthread_cond_destroy"                                               ; magicseg='TEXT32' len=21
+  "_pthread_cond_init"                                                  ; magicseg='TEXT32' len=18
+  "_pthread_cond_signal"                                                ; magicseg='TEXT32' len=20
+  "_pthread_cond_timedwait"                                             ; magicseg='TEXT32' len=23
+  "_pthread_cond_wait"                                                  ; magicseg='TEXT32' len=18
+  "_pthread_cond_broadcast"                                             ; magicseg='TEXT32' len=23
+  "_pthread_setspecific"                                                ; magicseg='TEXT32' len=20
+  "_pthread_getspecific"                                                ; magicseg='TEXT32' len=20
+  "_pthread_key_delete"                                                 ; magicseg='TEXT32' len=19
+  "_pthread_key_create"                                                 ; magicseg='TEXT32' len=19
+  "_pthread_mutex_destroy"                                              ; magicseg='TEXT32' len=22
+  "_pthread_mutex_init"                                                 ; magicseg='TEXT32' len=19
+  "_pthread_mutex_unlock"                                               ; magicseg='TEXT32' len=21
+  "_pthread_mutex_lock"                                                 ; magicseg='TEXT32' len=19
+  "_pthread_dummy"                                                      ; magicseg='TEXT32' len=14
+  "_pthread_cleanup_push"                                               ; magicseg='TEXT32' len=21
+  "_pthread_cleanup_pop"                                                ; magicseg='TEXT32' len=20
+  "_pthread_setcancelstate"                                             ; magicseg='TEXT32' len=23
+  "_pthread_setcanceltype"                                              ; magicseg='TEXT32' len=22
+  "_pthread_testcancel"                                                 ; magicseg='TEXT32' len=19
+  "_pthread_atfork"                                                     ; magicseg='TEXT32' len=15
+  "_pthread_yield"                                                      ; magicseg='TEXT32' len=14
+  "_pthread_once"                                                       ; magicseg='TEXT32' len=13
+  "_pthread_join"                                                       ; magicseg='TEXT32' len=13
+  "_pthread_self"                                                       ; magicseg='TEXT32' len=13
+  "_pthread_setprio"                                                    ; magicseg='TEXT32' len=16
+  "_win_pthread_setspecific"                                            ; magicseg='TEXT32' len=24
+  "_pthread_exit"                                                       ; magicseg='TEXT32' len=13
+  "_pthread_create"                                                     ; magicseg='TEXT32' len=15
+
+  "_TlsFreeThreadLocalMemory"                                           ; magicseg='TEXT32' len=25
+  "_TlsAllocThreadLocalMemory"                                          ; magicseg='TEXT32' len=26
+  "_TlsSetValue"                                                        ; magicseg='TEXT32' len=12
+  "_TlsGetValue"                                                        ; magicseg='TEXT32' len=12
+  "_TlsFree"                                                            ; magicseg='TEXT32' len=8
+  "_TlsAlloc"                                                           ; magicseg='TEXT32' len=9
+
