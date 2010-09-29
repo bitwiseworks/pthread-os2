@@ -21,7 +21,8 @@ extern "C" {
 
 typedef int     	pthread_key_t;
 typedef uint32_t	pthread_mutex_t;
-typedef uint32_t	pthread_t;
+typedef void*		pthread_t;
+
 typedef struct thread_attr {
     uint32_t 	dwStackSize ;
     uint32_t 	dwCreatingFlag ;
@@ -108,6 +109,29 @@ void pthread_yield(void);
 #define PTHREAD_MUTEX_ERRORCHECK 2
 #define PTHREAD_MUTEX_DEFAULT  PTHREAD_MUTEX_NORMAL
 #define pthread_mutexattr_settype(A, B) pthread_dummy(0)
+
+/* CANCEL */
+
+enum {
+  PTHREAD_CANCEL_ENABLE,
+#define PTHREAD_CANCEL_ENABLE PTHREAD_CANCEL_ENABLE
+  PTHREAD_CANCEL_DISABLE,
+#define PTHREAD_CANCEL_DISABLE PTHREAD_CANCEL_DISABLE
+};
+
+enum {
+  PTHREAD_CANCEL_DEFERRED,
+#define PTHREAD_CANCEL_DEFERRED PTHREAD_CANCEL_DEFERRED
+  PTHREAD_CANCEL_ASYNCHRONOUS,
+#define PTHREAD_CANCEL_ASYNCHRONOUS PTHREAD_CANCEL_ASYNCHRONOUS
+};
+
+#define PTHREAD_CANCELED ((void *) -1)
+
+int pthread_setcancelstate(int state, int *oldstate);
+int pthread_setcanceltype(int type, int *oldtype);
+void pthread_testcancel(void);
+int pthread_atfork(void (*prepare)(void), void (*parent)(void),void (*child)(void)); 
 
 #ifdef __cplusplus
 } // extern "C"
