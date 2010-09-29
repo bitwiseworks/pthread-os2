@@ -1,5 +1,5 @@
 # -Zomf
-CFLAGS=-g -march=pentium -mcpu=pentium3
+CFLAGS=-g -O2 -march=pentium -mcpu=pentium4
 #CFLAGS=-g -Ie:/rd/mysql/mysql-4.1.7/include -Ie:/rd/mysql/mysql-4.1.7/mysys
 LDFLAGS=-s -Zmap -Zhigh-mem -Zomf -Zexe 
 LN_CP_F=cp.exe 

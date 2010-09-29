@@ -114,6 +114,10 @@ PVOID TlsGetValue( ULONG index)
   if (index >= TLS_MINIMUM_AVAILABLE)
     return NULL;
 
+   // init memory if not already done
+  if (tls_storage == NULL)
+      TlsAllocThreadLocalMemory();
+
    // verify if memory has been allocated for this thread
    if (*tls_storage == NULL) {
       // allocate memory for indexes
@@ -127,6 +131,9 @@ PVOID TlsGetValue( ULONG index)
 
 BOOL TlsSetValue( ULONG index, PVOID val)
 {
+   // init memory if not already done
+  if (tls_storage == NULL)
+      TlsAllocThreadLocalMemory();
 
    // verify if memory has been allocated for this thread
    if (*tls_storage == NULL) {

@@ -2,6 +2,7 @@
 #ifndef __PTHREAD_H__
 #define __PTHREAD_H__
 
+#define INCL_DOS
 #define INCL_DOSSEMAPHORES
 #define INCL_DOSPROCESS
 #define INCL_NOPMAPI
@@ -15,6 +16,17 @@
 extern "C" {
 #endif
 
+#ifndef _SVPM_H
+#define PM_BOOL BOOL
+#endif
+
+ULONG	 TlsAlloc( void);
+PM_BOOL	 TlsFree( ULONG);
+PVOID	 TlsGetValue( ULONG);
+PM_BOOL	 TlsSetValue( ULONG, PVOID);
+void      TlsAllocThreadLocalMemory( void);
+void      TlsFreeThreadLocalMemory( void);
+
 /*
  * Flags for once initialization.
  */
@@ -22,6 +34,7 @@ extern "C" {
 #define PTHREAD_DONE_INIT   1
 #define PTHREAD_MUTEX_INITIALIZER -1
 #define PTHREAD_COND_INITIALIZER {-1,-1}
+
 
 typedef int     	pthread_key_t;
 typedef HMTX            pthread_mutex_t;
@@ -81,6 +94,8 @@ extern int pthread_mutex_destroy (pthread_mutex_t *);
 #define pthread_getspecific(A) (TlsGetValue(A))
 #define pthread_setspecific(A,B) (!TlsSetValue((A),(B)))
 
+#define pthread_yield()		DosSleep(0)
+
 void  pthread_setprio( int, int);
 //#define my_pthread_setprio(A,B)  pthread_setprio( A, B)
 #define pthread_kill(A,B) raise(B)
@@ -96,6 +111,10 @@ void  pthread_setprio( int, int);
 #define pthread_condattr_destroy(A)	0
 #define pthread_mutexattr_init(A) 	0
 #define pthread_mutexattr_destroy(A) 	0
+
+#define PTHREAD_ONCE_INIT -1
+typedef int* pthread_once_t;
+int pthread_once(pthread_once_t *once_control, void (*init_routine)(void));
 
 #ifdef __cplusplus
 } // extern "C"
