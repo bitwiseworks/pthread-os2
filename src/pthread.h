@@ -2,30 +2,13 @@
 #ifndef __PTHREAD_H__
 #define __PTHREAD_H__
 
-#define INCL_DOS
-#define INCL_DOSSEMAPHORES
-#define INCL_DOSPROCESS
-#define INCL_NOPMAPI
-#define INCL_NOCOMMON
-#include <os2.h>
-
 #include <errno.h>
 #include <time.h>
+#include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#ifndef _SVPM_H
-#define PM_BOOL BOOL
-#endif
-
-ULONG	 TlsAlloc( void);
-PM_BOOL	 TlsFree( ULONG);
-PVOID	 TlsGetValue( ULONG);
-PM_BOOL	 TlsSetValue( ULONG, PVOID);
-void      TlsAllocThreadLocalMemory( void);
-void      TlsFreeThreadLocalMemory( void);
 
 /*
  * Flags for once initialization.
@@ -37,18 +20,18 @@ void      TlsFreeThreadLocalMemory( void);
 
 
 typedef int     	pthread_key_t;
-typedef HMTX            pthread_mutex_t;
-typedef ULONG		pthread_t;
+typedef uint32_t	pthread_mutex_t;
+typedef uint32_t	pthread_t;
 typedef struct thread_attr {
-    ULONG dwStackSize ;
-    ULONG dwCreatingFlag ;
-    int priority ;
+    uint32_t 	dwStackSize ;
+    uint32_t 	dwCreatingFlag ;
+    int 		priority ;
 } pthread_attr_t ;
 
 typedef struct { int dummy; } pthread_condattr_t;
 typedef struct {
-  int	waiting;
-  HEV	semaphore;
+    int		waiting;
+    uint32_t	semaphore;
 } pthread_cond_t;
 
 typedef int pthread_mutexattr_t;
@@ -87,13 +70,11 @@ extern int pthread_mutex_lock (pthread_mutex_t *);
 extern int pthread_mutex_unlock (pthread_mutex_t *);
 extern int pthread_mutex_destroy (pthread_mutex_t *);
 
-#define pthread_key(T,V)  ULONG V
-#define pthread_key_create(A,B) ((*A=TlsAlloc())==0xFFFFFFFF)
-#define pthread_key_delete(A) TlsFree(A)
-#define pthread_getspecific(A) (TlsGetValue(A))
-#define pthread_setspecific(A,B) (!TlsSetValue((A),(B)))
-
-#define pthread_yield()		DosSleep(0)
+#define pthread_key(T,V)  uint32_t V
+int pthread_key_create(pthread_key_t *key, void (*destructor)(void*));
+int pthread_key_delete(pthread_key_t key);
+void *pthread_getspecific(pthread_key_t key);
+int pthread_setspecific(pthread_key_t key, const void *value);
 
 void  pthread_setprio( int, int);
 //#define my_pthread_setprio(A,B)  pthread_setprio( A, B)
@@ -123,3 +104,4 @@ int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);
 #endif
 
 #endif // __PTHREAD_H__
+

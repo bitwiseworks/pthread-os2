@@ -20,7 +20,13 @@
 
 /* SAFE_MUTEX will not work until the thread structure is up to date */
 #undef SAFE_MUTEX
+ 
+#define INCL_DOS
+#include <os2.h>
 
+#include <stdlib.h>
+#include <string.h>
+#include <process.h>
 #include <types.h>
 #include "pthread.h"
 
@@ -160,11 +166,16 @@ void pthread_cleanup_pop(int execute)
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
 {
   DosEnterCritSec();
-  if (*once_control == PTHREAD_ONCE_INIT)
+  if (*once_control == (pthread_once_t)PTHREAD_ONCE_INIT)
   {
      *once_control = 0;
      init_routine();
   }
   DosExitCritSec();
   return 0;
+}
+
+void pthread_yield(void)
+{
+    DosSleep(0);
 }

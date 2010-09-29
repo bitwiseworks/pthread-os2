@@ -33,6 +33,10 @@
  * SUCH DAMAGE.
  *
  */
+
+#define INCL_DOS
+#include <os2.h>
+
 #include <stdlib.h>
 #include <errno.h>
 
@@ -45,7 +49,7 @@ pthread_mutex_init(pthread_mutex_t * mutex,
 {
 	APIRET		rc = 0;
 
-	rc = DosCreateMutexSem(NULL,mutex,0,0);
+	rc = DosCreateMutexSem( NULL,(PHMTX)mutex,0,0);
 
 	/* Return the completion status: */
 	return (0);
@@ -72,17 +76,16 @@ pthread_mutex_destroy(pthread_mutex_t * mutex)
 int
 pthread_mutex_lock(pthread_mutex_t * mutex)
 {
-	int		ret = 0;
-	int		status = 0;
 	APIRET		rc = 0;
 
    // initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
    if (*mutex == -1)
       pthread_mutex_init( mutex, NULL);
 
-  rc = DosRequestMutexSem(*mutex,SEM_INDEFINITE_WAIT);
-  if (rc)
-    return(EINVAL);
+   rc = DosRequestMutexSem(*mutex,SEM_INDEFINITE_WAIT);
+   if (rc)
+      return(EINVAL);
+
 	/* Return the completion status: */
 	return (0);
 }
@@ -90,9 +93,7 @@ pthread_mutex_lock(pthread_mutex_t * mutex)
 int
 pthread_mutex_unlock(pthread_mutex_t * mutex)
 {
-	int		ret = 0;
 	APIRET		rc = 0;
-	int		status;
 
 
    // initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.

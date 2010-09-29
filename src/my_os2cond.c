@@ -22,7 +22,11 @@
 ** The following is a simple implementation of posix conditions
 *****************************************************************************/
 
+#define INCL_DOS
+#include <os2.h>
+
 #include <process.h>
+#include <strings.h>
 #include <sys/timeb.h>
 
 //#define DEBUG
@@ -33,13 +37,12 @@
 int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)
 {
    APIRET	   rc = 0;
-   HEV		   event;
 
    cond->waiting = -1;
    cond->semaphore = -1;
 
    /* Warp3 FP29 or Warp4 FP4 or better required */
-   rc = DosCreateEventSem( NULL, &cond->semaphore, 0x0800, 0);
+   rc = DosCreateEventSem( NULL, (PHEV)&cond->semaphore, 0x0800, 0);
    if (rc)
       return ENOMEM;
 
@@ -103,9 +106,8 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 			   struct timespec *abstime)
 {
-  struct timeb curtime;
-  int result;
-  long timeout;
+   struct timeb curtime;
+   long timeout;
    APIRET   rc;
    int	    rval;
 

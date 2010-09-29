@@ -18,26 +18,25 @@
    Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
    MA 02111-1307, USA */
 
+/*****************************************************************************
+** Win32 local thread storage functions emulation
+*****************************************************************************/
+
 #define INCL_DOS
 #include <os2.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stddef.h>
 
 #include "pthread.h"
-
-ULONG	 TlsAlloc( void);
-BOOL	 TlsFree( ULONG);
-PVOID	 TlsGetValue( ULONG);
-BOOL	 TlsSetValue( ULONG, PVOID);
-void      TlsAllocThreadLocalMemory( void);
-void      TlsFreeThreadLocalMemory( void);
+#include "tls.h"
 
 #define TLS_MINIMUM_AVAILABLE	64
 
 PULONG		tls_storage = NULL;	/* TLS local storage */
 ULONG		 tls_bits[2];	/* TLS in-use bits   */
-pthread_mutex_t tls_mutex = NULL;	/* TLS mutex for in-use bits */
+pthread_mutex_t tls_mutex = (pthread_mutex_t)NULL;	/* TLS mutex for in-use bits */
 
 ULONG	 TlsAlloc( void)
 {
@@ -49,7 +48,7 @@ ULONG	 TlsAlloc( void)
   if (tls_storage == NULL)
       TlsAllocThreadLocalMemory();
 
-   if (tls_mutex == NULL) {
+   if (tls_mutex == (pthread_mutex_t)NULL) {
       fprintf( stderr, "TlsAlloc: tls_mutex not initialized!");
       return -1;
   }
@@ -119,7 +118,7 @@ PVOID TlsGetValue( ULONG index)
       TlsAllocThreadLocalMemory();
 
    // verify if memory has been allocated for this thread
-   if (*tls_storage == NULL) {
+   if (*tls_storage == (ULONG)NULL) {
       // allocate memory for indexes
     *tls_storage = (ULONG)calloc( TLS_MINIMUM_AVAILABLE, sizeof(int));
       //fprintf( stderr, "tid#%d, tls_storage %x\n", _threadid, *tls_storage);
@@ -136,7 +135,7 @@ BOOL TlsSetValue( ULONG index, PVOID val)
       TlsAllocThreadLocalMemory();
 
    // verify if memory has been allocated for this thread
-   if (*tls_storage == NULL) {
+   if (*tls_storage == (ULONG)NULL) {
       // allocate memory for indexes
     *tls_storage = (ULONG)calloc( TLS_MINIMUM_AVAILABLE, sizeof(int));
       //fprintf( stderr, "tid#%d, tls_storage %x\n", _threadid, *tls_storage);
@@ -177,7 +176,7 @@ void      TlsAllocThreadLocalMemory( void)
    }
 
    // create a mutex
-   if (rc = pthread_mutex_init( &tls_mutex, NULL)) {
+   if ((rc = pthread_mutex_init( &tls_mutex, NULL))) {
       fprintf( stderr, "TlsAllocThreadLocalMemory: tls_mutex init failed rc=%u\n", rc);
       tls_storage = NULL;
       return;
@@ -201,7 +200,7 @@ void      TlsFreeThreadLocalMemory( void)
 
    // free mutex
    pthread_mutex_destroy( &tls_mutex);
-   tls_mutex = NULL;
+   tls_mutex = (pthread_mutex_t)NULL;
 
    // free memory for TLS storage
    rc = DosFreeThreadLocalMemory( tls_storage);
@@ -211,3 +210,4 @@ void      TlsFreeThreadLocalMemory( void)
    // reset memory
    tls_storage = NULL;
 }
+

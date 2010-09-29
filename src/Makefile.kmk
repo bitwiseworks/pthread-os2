@@ -19,10 +19,11 @@ pthread_SOURCES = \
 	my_os2cond.c \
 	my_os2mutex.c \
 	my_os2thread.c \
+	my_os2key.c \
 	my_os2tls.c
 
 pthread_CFLAGS = -Zomf
-pthread_CFLAGS.release = -s -O3 -march=pentium -mcpu=pentium4
+pthread_CFLAGS.release = -s -O3 -march=pentium -mcpu=pentium4 -Wall
 pthread_CFLAGS.debug = -g -O0 -DDEBUG_PRINTF
 pthread_LDFLAGS = -Zomf -Zno-fork -Zmap -Zbin-files
 pthread_LDFLAGS.release = -s
