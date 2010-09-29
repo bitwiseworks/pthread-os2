@@ -1,0 +1,9 @@
+#
+# pthread emulation library
+# kBuild configuration variables
+#
+# edit this file to change version numbering
+# in bldlevel informations
+#
+VERSION	= 20080822
+BUILD	= os2

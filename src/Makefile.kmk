@@ -1,0 +1,58 @@
+#
+# pthread emulation library
+# kBuild makefile
+#
+# please define (as env variables or kmk command line) the following variables before starting:
+# BUILD_PLATFORM = os2
+# BUILD_TYPE = release|debug
+#
+# Edit Config.kmk to match your installation.
+#
+
+DEPTH = ..
+
+TOOL = GCC3OMF
+
+LIBRARIES = pthread
+
+pthread_SOURCES = \
+	my_os2cond.c \
+	my_os2mutex.c \
+	my_os2thread.c \
+	my_os2tls.c
+
+pthread_CFLAGS = -Zomf
+pthread_CFLAGS.release = -s -O3 -march=pentium -mcpu=pentium4
+pthread_CFLAGS.debug = -g -O0 -DDEBUG_PRINTF
+pthread_LDFLAGS = -Zomf -Zno-fork -Zmap -Zbin-files
+pthread_LDFLAGS.release = -s
+pthread_LDFLAGS.debug = -g
+
+pthread_DEFS = 
+pthread_INCS = 
+
+pthread_CLEAN = $(PATH_LIB)/pthread.lib
+
+
+# packaging stuffs
+ifeq ($(BUILD_TYPE),debug)
+  PACKAGE_NAME = pthread-$(subst .,_,$(VERSION))-$(BUILD)-debug.zip
+else
+  PACKAGE_NAME = pthread-$(subst .,_,$(VERSION))-$(BUILD).zip
+endif
+PACKING += $(PATH_ROOT)/dist/$(PACKAGE_NAME)
+OTHER_CLEAN += $(PATH_ROOT)/dist/$(PACKAGE_NAME) 
+
+# now include standard code
+include $(PATH_KBUILD)/rules.kMk
+
+# here follows standard gnu make inference rules
+
+# final: zip all files!
+$(PATH_ROOT)/dist/$(PACKAGE_NAME): \
+		$(PATH_LIB)/pthread.lib
+	$(call MSG_L1,Packing $@)
+	$(QUIET)$(MKDIR) -p $(PATH_ROOT)/dist                              
+	$(QUIET)$(RM) -f $@
+	$(QUIET)zip -9q -j $@ *.c *.kmk *.h *.cmd $(PATH_LIB)/* 
+
