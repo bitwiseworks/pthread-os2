@@ -21,6 +21,7 @@ EXPORTS
   "_pthread_mutex_init"                                                 ; magicseg='TEXT32' len=19
   "_pthread_mutex_unlock"                                               ; magicseg='TEXT32' len=21
   "_pthread_mutex_lock"                                                 ; magicseg='TEXT32' len=19
+  "_pthread_mutex_trylock"                                              ; magicseg='TEXT32' len=19
   "_pthread_dummy"                                                      ; magicseg='TEXT32' len=14
   "_pthread_cleanup_push"                                               ; magicseg='TEXT32' len=21
   "_pthread_cleanup_pop"                                                ; magicseg='TEXT32' len=20

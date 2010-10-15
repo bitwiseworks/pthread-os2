@@ -70,6 +70,7 @@ static int pthread_equal(pthread_t t1,pthread_t t2) { return ( t1 == t2);};
 
 extern int pthread_mutex_init (pthread_mutex_t *, const pthread_mutexattr_t *);
 extern int pthread_mutex_lock (pthread_mutex_t *);
+extern int pthread_mutex_trylock (pthread_mutex_t *);
 extern int pthread_mutex_unlock (pthread_mutex_t *);
 extern int pthread_mutex_destroy (pthread_mutex_t *);
 
@@ -82,7 +83,6 @@ int pthread_setspecific(pthread_key_t key, const void *value);
 void  pthread_setprio( int, int);
 //#define my_pthread_setprio(A,B)  pthread_setprio( A, B)
 #define pthread_kill(A,B) raise(B)
-#define pthread_mutex_trylock(A) pthread_mutex_lock(A)
 #define pthread_sigmask(A,B,C) sigprocmask((A),(B),(C))
 
 /* Dummy defines for easier code */
