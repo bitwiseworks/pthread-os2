@@ -80,7 +80,7 @@ pthread_mutex_lock(pthread_mutex_t * mutex)
 	APIRET		rc = 0;
 
    // initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-   if (*mutex == -1)
+   if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
       pthread_mutex_init( mutex, NULL);
 
    rc = DosRequestMutexSem(*mutex,SEM_INDEFINITE_WAIT);
@@ -97,7 +97,7 @@ pthread_mutex_trylock(pthread_mutex_t * mutex)
 	APIRET		rc = 0;
 
 	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-	if (*mutex == -1)
+	if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
 		pthread_mutex_init( mutex, NULL);
 
 	rc = DosRequestMutexSem(*mutex,SEM_IMMEDIATE_RETURN);
@@ -123,11 +123,223 @@ pthread_mutex_unlock(pthread_mutex_t * mutex)
 
 
    // initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-   if (*mutex == -1)
+   if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
       pthread_mutex_init( mutex, NULL);
 
    rc = DosReleaseMutexSem(*mutex);
 
 	/* Return the completion status: */
 	return (0);
+}
+
+int
+pthread_mutexattr_init (pthread_mutexattr_t * attr)
+     /*
+      * ------------------------------------------------------
+      * DOCPUBLIC
+      *      Initializes a mutex attributes object with default
+      *      attributes.
+      *
+      * PARAMETERS
+      *      attr
+      *              pointer to an instance of pthread_mutexattr_t
+      *
+      *
+      * DESCRIPTION
+      *      Initializes a mutex attributes object with default
+      *      attributes.
+      *
+      *      NOTES:
+      *              1)      Used to define mutex types
+      *
+      * RESULTS
+      *              0               successfully initialized attr,
+      *              ENOMEM          insufficient memory for attr.
+      *
+      * ------------------------------------------------------
+      */
+{
+  int result = 0;
+  pthread_mutexattr_t ma;
+
+  ma = (pthread_mutexattr_t) calloc (1, sizeof (*ma));
+
+  if (ma == NULL)
+    {
+      result = ENOMEM;
+    }
+  else
+    {
+      ma->pshared = PTHREAD_PROCESS_PRIVATE;
+      ma->kind = PTHREAD_MUTEX_DEFAULT;
+    }
+
+  *attr = ma;
+
+  return (result);
+}				/* pthread_mutexattr_init */
+
+int
+pthread_mutexattr_destroy (pthread_mutexattr_t * attr)
+     /*
+      * ------------------------------------------------------
+      * DOCPUBLIC
+      *      Destroys a mutex attributes object. The object can
+      *      no longer be used.
+      *
+      * PARAMETERS
+      *      attr
+      *              pointer to an instance of pthread_mutexattr_t
+      *
+      *
+      * DESCRIPTION
+      *      Destroys a mutex attributes object. The object can
+      *      no longer be used.
+      *
+      *      NOTES:
+      *              1)      Does not affect mutexes created using 'attr'
+      *
+      * RESULTS
+      *              0               successfully released attr,
+      *              EINVAL          'attr' is invalid.
+      *
+      * ------------------------------------------------------
+      */
+{
+  int result = 0;
+
+  if (attr == NULL || *attr == NULL)
+    {
+      result = EINVAL;
+    }
+  else
+    {
+      pthread_mutexattr_t ma = *attr;
+
+      *attr = NULL;
+      free (ma);
+    }
+
+  return (result);
+}				/* pthread_mutexattr_destroy */
+
+int
+pthread_mutexattr_settype (pthread_mutexattr_t * attr, int kind)
+     /*
+      * ------------------------------------------------------
+      *
+      * DOCPUBLIC
+      * The pthread_mutexattr_settype() and
+      * pthread_mutexattr_gettype() functions  respectively set and
+      * get the mutex type  attribute. This attribute is set in  the
+      * type parameter to these functions.
+      *
+      * PARAMETERS
+      *      attr
+      *              pointer to an instance of pthread_mutexattr_t
+      *
+      *      type
+      *              must be one of:
+      *
+      *                      PTHREAD_MUTEX_DEFAULT
+      *
+      *                      PTHREAD_MUTEX_NORMAL
+      *
+      *                      PTHREAD_MUTEX_ERRORCHECK
+      *
+      *                      PTHREAD_MUTEX_RECURSIVE
+      *
+      * DESCRIPTION
+      * The pthread_mutexattr_settype() and
+      * pthread_mutexattr_gettype() functions  respectively set and
+      * get the mutex type  attribute. This attribute is set in  the
+      * type  parameter to these functions. The default value of the
+      * type  attribute is  PTHREAD_MUTEX_DEFAULT.
+      * 
+      * The type of mutex is contained in the type  attribute of the
+      * mutex attributes. Valid mutex types include:
+      *
+      * PTHREAD_MUTEX_NORMAL
+      *          This type of mutex does  not  detect  deadlock.  A
+      *          thread  attempting  to  relock  this mutex without
+      *          first unlocking it will  deadlock.  Attempting  to
+      *          unlock  a  mutex  locked  by  a  different  thread
+      *          results  in  undefined  behavior.  Attempting   to
+      *          unlock  an  unlocked  mutex  results  in undefined
+      *          behavior.
+      * 
+      * PTHREAD_MUTEX_ERRORCHECK
+      *          This type of  mutex  provides  error  checking.  A
+      *          thread  attempting  to  relock  this mutex without
+      *          first unlocking it will return with  an  error.  A
+      *          thread  attempting to unlock a mutex which another
+      *          thread has locked will return  with  an  error.  A
+      *          thread attempting to unlock an unlocked mutex will
+      *          return with an error.
+      *
+      * PTHREAD_MUTEX_DEFAULT
+      *          Same as PTHREAD_MUTEX_NORMAL.
+      * 
+      * PTHREAD_MUTEX_RECURSIVE
+      *          A thread attempting to relock this  mutex  without
+      *          first  unlocking  it  will  succeed in locking the
+      *          mutex. The relocking deadlock which can occur with
+      *          mutexes of type  PTHREAD_MUTEX_NORMAL cannot occur
+      *          with this type of mutex. Multiple  locks  of  this
+      *          mutex  require  the  same  number  of  unlocks  to
+      *          release  the  mutex  before  another  thread   can
+      *          acquire the mutex. A thread attempting to unlock a
+      *          mutex which another thread has locked will  return
+      *          with  an  error. A thread attempting to  unlock an
+      *          unlocked mutex will return  with  an  error.  This
+      *          type  of mutex is only supported for mutexes whose
+      *          process        shared         attribute         is
+      *          PTHREAD_PROCESS_PRIVATE.
+      *
+      * RESULTS
+      *              0               successfully set attribute,
+      *              EINVAL          'attr' or 'type' is invalid,
+      *
+      * ------------------------------------------------------
+      */
+{
+  int result = 0;
+
+  if ((attr != NULL && *attr != NULL))
+    {
+      switch (kind)
+	{
+	case PTHREAD_MUTEX_FAST_NP:
+	case PTHREAD_MUTEX_RECURSIVE_NP:
+	case PTHREAD_MUTEX_ERRORCHECK_NP:
+	  (*attr)->kind = kind;
+	  break;
+	default:
+	  result = EINVAL;
+	  break;
+	}
+    }
+  else
+    {
+      result = EINVAL;
+    }
+
+  return (result);
+}				/* pthread_mutexattr_settype */
+
+int
+pthread_mutexattr_gettype (pthread_mutexattr_t * attr, int *kind)
+{
+  int result = 0;
+
+  if (attr != NULL && *attr != NULL && kind != NULL)
+    {
+      *kind = (*attr)->kind;
+    }
+  else
+    {
+      result = EINVAL;
+    }
+
+  return (result);
 }

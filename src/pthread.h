@@ -15,7 +15,6 @@ extern "C" {
  */
 #define PTHREAD_NEEDS_INIT  0
 #define PTHREAD_DONE_INIT   1
-#define PTHREAD_MUTEX_INITIALIZER -1
 #define PTHREAD_COND_INITIALIZER {-1,-1}
 
 
@@ -35,7 +34,6 @@ typedef struct {
     uint32_t	semaphore;
 } pthread_cond_t;
 
-typedef int pthread_mutexattr_t;
 typedef void	*pthread_addr_t;
 
 #define pthread_handler_decl(A,B) void * A(void *B)
@@ -68,12 +66,6 @@ void		pthread_cleanup_push (void (*routine) (void *),
 
 static int pthread_equal(pthread_t t1,pthread_t t2) { return ( t1 == t2);};
 
-extern int pthread_mutex_init (pthread_mutex_t *, const pthread_mutexattr_t *);
-extern int pthread_mutex_lock (pthread_mutex_t *);
-extern int pthread_mutex_trylock (pthread_mutex_t *);
-extern int pthread_mutex_unlock (pthread_mutex_t *);
-extern int pthread_mutex_destroy (pthread_mutex_t *);
-
 #define pthread_key(T,V)  uint32_t V
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void*));
 int pthread_key_delete(pthread_key_t key);
@@ -92,8 +84,6 @@ void  pthread_setprio( int, int);
 #define pthread_detach_this_thread()
 #define pthread_condattr_init(A) 	0
 #define pthread_condattr_destroy(A)	0
-#define pthread_mutexattr_init(A) 	0
-#define pthread_mutexattr_destroy(A) 	0
 
 typedef int* pthread_once_t;
 #define PTHREAD_ONCE_INIT ((pthread_once_t)-1)
@@ -104,29 +94,112 @@ int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);
 
 void pthread_yield(void);
 
-#define PTHREAD_MUTEX_NORMAL 0
-#define PTHREAD_MUTEX_RECURSIVE 1
-#define PTHREAD_MUTEX_ERRORCHECK 2
-#define PTHREAD_MUTEX_DEFAULT  PTHREAD_MUTEX_NORMAL
-#define pthread_mutexattr_settype(A, B) pthread_dummy(0)
+/*
+ * ====================
+ * ====================
+ * POSIX Threads
+ * ====================
+ * ====================
+ */
+
+enum {
+/*
+ * pthread_attr_{get,set}detachstate
+ */
+  PTHREAD_CREATE_JOINABLE       = 0,  /* Default */
+  PTHREAD_CREATE_DETACHED       = 1,
+
+/*
+ * pthread_attr_{get,set}inheritsched
+ */
+  PTHREAD_INHERIT_SCHED         = 0,
+  PTHREAD_EXPLICIT_SCHED        = 1,  /* Default */
+
+/*
+ * pthread_{get,set}scope
+ */
+  PTHREAD_SCOPE_PROCESS         = 0,
+  PTHREAD_SCOPE_SYSTEM          = 1,  /* Default */
+
+/*
+ * pthread_setcancelstate paramters
+ */
+  PTHREAD_CANCEL_ENABLE         = 0,  /* Default */
+  PTHREAD_CANCEL_DISABLE        = 1,
+
+/*
+ * pthread_setcanceltype parameters
+ */
+  PTHREAD_CANCEL_ASYNCHRONOUS   = 0,
+  PTHREAD_CANCEL_DEFERRED       = 1,  /* Default */
+
+/*
+ * pthread_mutexattr_{get,set}pshared
+ * pthread_condattr_{get,set}pshared
+ */
+  PTHREAD_PROCESS_PRIVATE       = 0,
+  PTHREAD_PROCESS_SHARED        = 1,
+
+/*
+ * pthread_barrier_wait
+ */
+  PTHREAD_BARRIER_SERIAL_THREAD = -1
+};
+
+/*
+ * ====================
+ * ====================
+ * Cancelation
+ * ====================
+ * ====================
+ */
+#define PTHREAD_CANCELED       ((void *) -1)
+
+/*
+ * Mutex types.
+ */
+enum
+{
+  /* Compatibility with LinuxThreads */
+  PTHREAD_MUTEX_FAST_NP,
+  PTHREAD_MUTEX_RECURSIVE_NP,
+  PTHREAD_MUTEX_ERRORCHECK_NP,
+  PTHREAD_MUTEX_TIMED_NP = PTHREAD_MUTEX_FAST_NP,
+  PTHREAD_MUTEX_ADAPTIVE_NP = PTHREAD_MUTEX_FAST_NP,
+  /* For compatibility with POSIX */
+  PTHREAD_MUTEX_NORMAL = PTHREAD_MUTEX_FAST_NP,
+  PTHREAD_MUTEX_RECURSIVE = PTHREAD_MUTEX_RECURSIVE_NP,
+  PTHREAD_MUTEX_ERRORCHECK = PTHREAD_MUTEX_ERRORCHECK_NP,
+  PTHREAD_MUTEX_DEFAULT = PTHREAD_MUTEX_NORMAL
+};
+
+/*
+ * ====================
+ * ====================
+ * Object initialisers
+ * ====================
+ * ====================
+ */
+#define PTHREAD_MUTEX_INITIALIZER ((pthread_mutex_t) -1)
+#define PTHREAD_RECURSIVE_MUTEX_INITIALIZER ((pthread_mutex_t) -2)
+#define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER ((pthread_mutex_t) -3)
+
+struct pthread_mutexattr_t_
+{
+  int pshared;
+  int kind;
+};
+typedef struct pthread_mutexattr_t_ * pthread_mutexattr_t;
+
+
+int pthread_mutex_init (pthread_mutex_t *, const pthread_mutexattr_t *);
+int pthread_mutex_lock (pthread_mutex_t *);
+int pthread_mutex_trylock (pthread_mutex_t *);
+int pthread_mutex_unlock (pthread_mutex_t *);
+int pthread_mutex_destroy (pthread_mutex_t *);
+
 
 /* CANCEL */
-
-enum {
-  PTHREAD_CANCEL_ENABLE,
-#define PTHREAD_CANCEL_ENABLE PTHREAD_CANCEL_ENABLE
-  PTHREAD_CANCEL_DISABLE,
-#define PTHREAD_CANCEL_DISABLE PTHREAD_CANCEL_DISABLE
-};
-
-enum {
-  PTHREAD_CANCEL_DEFERRED,
-#define PTHREAD_CANCEL_DEFERRED PTHREAD_CANCEL_DEFERRED
-  PTHREAD_CANCEL_ASYNCHRONOUS,
-#define PTHREAD_CANCEL_ASYNCHRONOUS PTHREAD_CANCEL_ASYNCHRONOUS
-};
-
-#define PTHREAD_CANCELED ((void *) -1)
 
 int pthread_setcancelstate(int state, int *oldstate);
 int pthread_setcanceltype(int type, int *oldtype);
