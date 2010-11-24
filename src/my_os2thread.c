@@ -7,6 +7,8 @@
 #include <string.h>
 #include <process.h>
 #include <types.h>
+#include <sys/builtin.h>
+
 #include "pthread.h"
 
 #undef pthread_exit
@@ -166,16 +168,24 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
 {
   pthread_mutex_t THR_LOCK_once;
 
-  // protect init
-  pthread_mutex_lock(&THR_LOCK_once);
+  if (once_control == NULL || init_routine == NULL)
+    {
+      return EINVAL;
+    }
 
-  if (*once_control == (pthread_once_t)PTHREAD_ONCE_INIT)
-  {
-     *once_control = 0;
-     init_routine();
-  }
+  if (!__atomic_xchg((unsigned)&once_control->done, 0)) /* MBR fence */
+    {
+      pthread_mutex_lock(&once_control->lock);
 
-  pthread_mutex_unlock(&THR_LOCK_once);
+      if (!once_control->done)
+	{
+	  (*init_routine)();
+	  once_control->done = PTW32_TRUE;
+	}
+
+	pthread_mutex_unlock(&once_control->lock);
+    }
+
   return 0;
 }
 

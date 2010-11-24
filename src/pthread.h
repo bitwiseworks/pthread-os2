@@ -11,6 +11,14 @@ extern "C" {
 #endif
 
 /*
+ * Boolean values to make us independent of system includes.
+ */
+enum {
+  PTW32_FALSE = 0,
+  PTW32_TRUE = (! PTW32_FALSE)
+};
+
+/*
  * Flags for once initialization.
  */
 #define PTHREAD_NEEDS_INIT  0
@@ -84,10 +92,6 @@ void  pthread_setprio( int, int);
 #define pthread_detach_this_thread()
 #define pthread_condattr_init(A) 	0
 #define pthread_condattr_destroy(A)	0
-
-typedef int* pthread_once_t;
-#define PTHREAD_ONCE_INIT ((pthread_once_t)-1)
-int pthread_once(pthread_once_t *once_control, void (*init_routine)(void));
 
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
 int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize); 
@@ -205,6 +209,26 @@ int pthread_setcancelstate(int state, int *oldstate);
 int pthread_setcanceltype(int type, int *oldtype);
 void pthread_testcancel(void);
 int pthread_atfork(void (*prepare)(void), void (*parent)(void),void (*child)(void)); 
+
+/*
+ * ====================
+ * ====================
+ * Once Key
+ * ====================
+ * ====================
+ */
+#define PTHREAD_ONCE_INIT       { PTW32_FALSE, 0, 0, 0}
+
+struct pthread_once_t_
+{
+  unsigned        done;        /* indicates if user function has been executed */
+  pthread_mutex_t lock;
+  int          reserved1;
+  int          reserved2;
+};
+typedef struct pthread_once_t_ pthread_once_t;
+int pthread_once(pthread_once_t *once_control, void (*init_routine)(void));
+
 
 #ifdef __cplusplus
 } // extern "C"
