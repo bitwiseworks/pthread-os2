@@ -151,7 +151,8 @@ int pthread_cond_signal(pthread_cond_t *cond)
       pthread_cond_init( cond, NULL);
 
    /* Bring the next thread off the condition queue: */
-   rc = DosPostEventSem(cond->semaphore);
+   if (cond->waiting)
+      rc = DosPostEventSem(cond->semaphore);
    return 0;
 }
 

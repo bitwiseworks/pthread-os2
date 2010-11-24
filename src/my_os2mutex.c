@@ -93,7 +93,26 @@ pthread_mutex_lock(pthread_mutex_t * mutex)
 int
 pthread_mutex_trylock(pthread_mutex_t * mutex)
 {
-	return pthread_mutex_lock( mutex);
+	APIRET		rc = 0;
+
+	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
+	if (*mutex == -1)
+		pthread_mutex_init( mutex, NULL);
+
+	rc = DosRequestMutexSem(*mutex,SEM_IMMEDIATE_RETURN);
+	if (rc) {
+		switch(rc) {
+		case ERROR_INVALID_HANDLE :
+			return(EFAULT);
+		case ERROR_TIMEOUT:
+			return(EBUSY);
+		default:
+			return(EINVAL);
+		}
+	}
+
+	/* Return the completion status: */
+	return (0);
 }
 
 int
