@@ -34,6 +34,7 @@ typedef struct thread_attr {
     uint32_t 	dwStackSize ;
     uint32_t 	dwCreatingFlag ;
     int 		priority ;
+    int         detachstate;
 } pthread_attr_t ;
 
 typedef struct { int dummy; } pthread_condattr_t;
@@ -52,7 +53,6 @@ int pthread_dummy(int ret);
 int pthread_create(pthread_t *,pthread_attr_t *,pthread_handler,void *);
 pthread_t pthread_self(void);
 int pthread_join(  pthread_t thread, pthread_addr_t *status);
-#define pthread_detach( A) pthread_dummy(0)
 
 int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr);
 int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
@@ -61,9 +61,6 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 int pthread_cond_signal(pthread_cond_t *cond);
 int pthread_cond_broadcast(pthread_cond_t *cond);
 int pthread_cond_destroy(pthread_cond_t *cond);
-int pthread_attr_init(pthread_attr_t *connect_att);
-int pthread_attr_setprio(pthread_attr_t *connect_att,int priority);
-int pthread_attr_destroy(pthread_attr_t *connect_att);
 void pthread_exit(void *a);	 /* was #define pthread_exit(A) ExitThread(A)*/
 
 void		pthread_cleanup_pop (int execute);
@@ -81,20 +78,23 @@ void *pthread_getspecific(pthread_key_t key);
 int pthread_setspecific(pthread_key_t key, const void *value);
 
 void  pthread_setprio( int, int);
-//#define my_pthread_setprio(A,B)  pthread_setprio( A, B)
-#define pthread_kill(A,B) raise(B)
+int pthread_kill (pthread_t thread, int sig);
+
 #define pthread_sigmask(A,B,C) sigprocmask((A),(B),(C))
 
-/* Dummy defines for easier code */
-#define pthread_attr_setdetachstate(A,B) pthread_dummy(0)
-//#define my_pthread_attr_setprio(A,B) pthread_attr_setprio(A,B)
-#define pthread_attr_setscope(A,B)
-#define pthread_detach_this_thread()
+/*
+ * PThread Attribute Functions
+ */
 #define pthread_condattr_init(A) 	0
 #define pthread_condattr_destroy(A)	0
-
+#define pthread_attr_setscope(A,B)
+int pthread_attr_init(pthread_attr_t *connect_att);
+int pthread_attr_setprio(pthread_attr_t *connect_att,int priority);
+int pthread_attr_destroy(pthread_attr_t *connect_att);
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
 int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize); 
+int pthread_attr_setdetachstate (pthread_attr_t * attr, int detachstate);
+int pthread_attr_getdetachstate (const pthread_attr_t * attr, int *detachstate);
 
 void pthread_yield(void);
 
