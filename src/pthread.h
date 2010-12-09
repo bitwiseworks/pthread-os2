@@ -217,7 +217,7 @@ int pthread_atfork(void (*prepare)(void), void (*parent)(void),void (*child)(voi
  * ====================
  * ====================
  */
-#define PTHREAD_ONCE_INIT       { PTW32_FALSE, 0, 0, 0}
+#define PTHREAD_ONCE_INIT       { PTW32_FALSE, PTHREAD_MUTEX_INITIALIZER, 0, 0}
 
 struct pthread_once_t_
 {
