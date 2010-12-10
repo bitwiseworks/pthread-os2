@@ -34,7 +34,6 @@ EXPORTS
   "_pthread_join"                                                       ; magicseg='TEXT32' len=13
   "_pthread_self"                                                       ; magicseg='TEXT32' len=13
   "_pthread_setprio"                                                    ; magicseg='TEXT32' len=16
-  "_win_pthread_setspecific"                                            ; magicseg='TEXT32' len=24
   "_pthread_exit"                                                       ; magicseg='TEXT32' len=13
   "_pthread_create"                                                     ; magicseg='TEXT32' len=15
 

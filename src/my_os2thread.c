@@ -13,7 +13,7 @@
 
 static pthread_mutex_t THR_LOCK_thread = PTHREAD_MUTEX_INITIALIZER;
 
-static pthread_key_t THR_self;
+static pthread_key_t THR_self = -1;
 
 struct pthread_map
 {
@@ -58,7 +58,7 @@ int pthread_create(pthread_t *thread_id, pthread_attr_t *attr,
     if (pthread_mutex_init(&THR_LOCK_thread,NULL)==-1)
       return -1; // fail
  
-  if (!THR_self)
+  if (THR_self == -1)
     if (pthread_key_create(&THR_self,NULL)==-1)
       return -1; // fail
 
@@ -122,13 +122,6 @@ void pthread_exit(void *a)
 
   // let libc terminate this thread
   _endthread();
-}
-
-/* This is neaded to get the macro pthread_setspecific to work */
-int win_pthread_setspecific(void *a,void *b,uint length)
-{
-  memcpy(a,b,length);
-  return 0;
 }
 
 void pthread_setprio( int a, int b)
