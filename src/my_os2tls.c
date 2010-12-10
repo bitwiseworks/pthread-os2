@@ -58,7 +58,7 @@ ULONG	 TlsAlloc( void)
   tibidx = 0;
    if (tls_bits[0] == 0xFFFFFFFF) {
       if (tls_bits[1] == 0xFFFFFFFF) {
-            fprintf( stderr, "TlsAlloc: tid#%d, no more TLS bits available\n", _threadid);
+            fprintf( stderr, "TlsAlloc: tid#%d, no more TLS bits available\n", _gettid());
       pthread_mutex_unlock( &tls_mutex);
       return -1;
     }
@@ -170,14 +170,14 @@ void      TlsAllocThreadLocalMemory( void)
    // allocate memory for TLS storage
    rc = DosAllocThreadLocalMemory( 1, &tls_storage);
    if (rc) {
-      fprintf( stderr, "TlsAllocThreadLocalMemory: DosAllocThreadLocalMemory failed rc=%u\n", rc);
+      fprintf( stderr, "TlsAllocThreadLocalMemory: DosAllocThreadLocalMemory failed rc=%d\n",(int)rc);
       tls_storage = NULL;
       return;
    }
 
    // create a mutex
    if ((rc = pthread_mutex_init( &tls_mutex, NULL))) {
-      fprintf( stderr, "TlsAllocThreadLocalMemory: tls_mutex init failed rc=%u\n", rc);
+      fprintf( stderr, "TlsAllocThreadLocalMemory: tls_mutex init failed rc=%d\n",(int)rc);
       tls_storage = NULL;
       return;
    }
@@ -205,7 +205,7 @@ void      TlsFreeThreadLocalMemory( void)
    // free memory for TLS storage
    rc = DosFreeThreadLocalMemory( tls_storage);
    if (rc)
-      fprintf( stderr, "DosFreeThreadLocalMemory error: return code = %u\n", rc);
+      fprintf( stderr, "DosFreeThreadLocalMemory error: return code = %d\n",(int)rc);
 
    // reset memory
    tls_storage = NULL;

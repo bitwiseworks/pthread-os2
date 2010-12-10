@@ -196,9 +196,18 @@ pthread_self (void)
 */
 int pthread_join( pthread_t thread, pthread_addr_t *status)
 {
+  struct pthread_map* self = (struct pthread_map*) pthread_self();
   // get data structure
   struct pthread_map* map = (struct pthread_map*) thread;
   APIRET rc;
+
+  // not valid for same thread
+  if (self == thread) 
+      return EDEADLK;
+
+  // not valid for detached thread
+  if (map->detachState == PTHREAD_CREATE_DETACHED)
+      return EINVAL;
 
   // now wait for thread end
   if (!map->done) {
@@ -234,7 +243,7 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
       return EINVAL;
     }
 
-  if (!__atomic_xchg((unsigned)&once_control->done, 0)) /* MBR fence */
+  if (!__atomic_xchg((unsigned*)&once_control->done, 0)) /* MBR fence */
     {
       pthread_mutex_lock(&once_control->lock);
 
@@ -306,7 +315,9 @@ pthread_detach (pthread_t thread)
   // get data structure
   struct pthread_map* map = (struct pthread_map*) thread;
   int result;
+#if 0
   BOOL destroyIt = PTW32_FALSE;
+#endif
 
   DosEnterCritSec();
 
@@ -413,7 +424,7 @@ pthread_kill (pthread_t thread, int sig)
 
   if (NULL == map
       || TRUE == map->done
-      || NULL == map->hThread)
+      || 0 == map->hThread)
     {
       result = ESRCH;
     }
