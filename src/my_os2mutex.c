@@ -80,8 +80,12 @@ pthread_mutex_lock(pthread_mutex_t * mutex)
 	APIRET		rc = 0;
 
    // initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-   if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
-      pthread_mutex_init( mutex, NULL);
+   if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
+      DosEnterCritSec();
+      if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
+         pthread_mutex_init( mutex, NULL);
+      DosExitCritSec();
+   }
 
    rc = DosRequestMutexSem(*mutex,SEM_INDEFINITE_WAIT);
    if (rc)
@@ -97,8 +101,12 @@ pthread_mutex_trylock(pthread_mutex_t * mutex)
 	APIRET		rc = 0;
 
 	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-	if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
-		pthread_mutex_init( mutex, NULL);
+   if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
+      DosEnterCritSec();
+      if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
+         pthread_mutex_init( mutex, NULL);
+      DosExitCritSec();
+   }
 
 	rc = DosRequestMutexSem(*mutex,SEM_IMMEDIATE_RETURN);
 	if (rc) {
@@ -123,8 +131,12 @@ pthread_mutex_unlock(pthread_mutex_t * mutex)
 
 
    // initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-   if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
-      pthread_mutex_init( mutex, NULL);
+   if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
+      DosEnterCritSec();
+      if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
+         pthread_mutex_init( mutex, NULL);
+      DosExitCritSec();
+   }
 
    rc = DosReleaseMutexSem(*mutex);
 
