@@ -69,7 +69,7 @@ void		pthread_cleanup_push (void (*routine) (void *),
 
 #define _REENTRANT			1
 
-static int pthread_equal(pthread_t t1,pthread_t t2) { return ( t1 == t2);};
+int pthread_equal(pthread_t t1,pthread_t t2);
 
 #define pthread_key(T,V)  uint32_t V
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void*));

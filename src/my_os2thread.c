@@ -124,6 +124,11 @@ void pthread_exit(void *a)
   _endthread();
 }
 
+int pthread_equal(pthread_t t1,pthread_t t2)
+{
+   return ( t1 == t2);
+}
+
 void pthread_setprio( int a, int b)
 {
    DosSetPriority(PRTYS_THREAD,PRTYC_NOCHANGE, b, a);   
