@@ -67,7 +67,7 @@ pthread_mutex_destroy(pthread_mutex_t * mutex)
     if (rc == 301) DosReleaseMutexSem(*mutex);
   } while (rc == 301);
 
-  *mutex = 0;
+  *mutex = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER;
 
 	/* Return the completion status: */
 	return (0);

@@ -236,7 +236,7 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
       return EINVAL;
     }
 
-  if (!__atomic_xchg((unsigned*)&once_control->done, 0)) /* MBR fence */
+  if (__atomic_cmpxchg32((unsigned*)&once_control->done, 0, 0)) /* MBR fence */
     {
       pthread_mutex_lock(&once_control->lock);
 
@@ -246,7 +246,7 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
 	  once_control->done = PTW32_TRUE;
 	}
 
-	pthread_mutex_unlock(&once_control->lock);
+      pthread_mutex_unlock(&once_control->lock);
     }
 
   return 0;
