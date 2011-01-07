@@ -49,7 +49,7 @@ static pthread_handler_decl(pthread_start,param)
   return 0;				  /* Safety */
 }
 
-int pthread_create(pthread_t *thread_id, pthread_attr_t *attr,
+int pthread_create(pthread_t *thread_id, const pthread_attr_t *attr,
 		   pthread_handler func, void *param)
 {
   struct pthread_map *map;

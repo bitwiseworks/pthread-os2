@@ -50,7 +50,7 @@ typedef void * (*pthread_handler)(void *);
 
 int pthread_dummy(int ret);
 
-int pthread_create(pthread_t *,pthread_attr_t *,pthread_handler,void *);
+int pthread_create(pthread_t *,const pthread_attr_t *,pthread_handler,void *);
 pthread_t pthread_self(void);
 int pthread_join(  pthread_t thread, pthread_addr_t *status);
 
