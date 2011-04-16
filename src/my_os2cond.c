@@ -25,6 +25,7 @@
 #define INCL_DOS
 #include <os2.h>
 
+#include <malloc.h>
 #include <process.h>
 #include <strings.h>
 #include <sys/timeb.h>
@@ -32,43 +33,70 @@
 //#define DEBUG
 
 #include "pthread.h"
+#include "pthread_private.h"
 
 
 int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)
 {
-   APIRET	   rc = 0;
+	APIRET	   rc = 0;
+	pthread_cond_t cv = NULL;
 
-   cond->waiting = -1;
-   cond->semaphore = -1;
+	if (cond == NULL)
+	{
+		return EINVAL;
+	}
 
-   /* Warp3 FP29 or Warp4 FP4 or better required */
-   rc = DosCreateEventSem( NULL, (PHEV)&cond->semaphore, 0x0800, 0);
-   if (rc)
-      return ENOMEM;
+	cv = (pthread_cond_t) calloc (1, sizeof (*cv));
+	if (cv == NULL)
+	{
+		return ENOMEM;
+	}
 
-   cond->waiting=0;
+	cv->waiting = -1;
+	cv->semaphore = -1;
+
+	/* Warp3 FP29 or Warp4 FP4 or better required */
+	rc = DosCreateEventSem( NULL, (PHEV)&cv->semaphore, 0x0800, 0);
+	if (rc) {
+		free( cv);
+		return ENOMEM;
+	}
+
+	cv->waiting=0;
 
 #ifdef DEBUG
-   printf( "pthread_cond_init cond->semaphore %x\n", cond->semaphore);
+	printf( "pthread_cond_init cond->semaphore %x\n", cv->semaphore);
 #endif
 
-  return 0;
+	*cond = cv;
+	return 0;
 }
 
 int pthread_cond_destroy(pthread_cond_t *cond)
 {
-   APIRET   rc;
+	APIRET   rc;
+	pthread_cond_t cv;
+
+	if (cond == NULL || *cond == NULL)
+	{
+		return EINVAL;
+	}
+
+	cv = *cond;
 
 #ifdef DEBUG
-   printf( "pthread_cond_destroy cond->semaphore %x\n", cond->semaphore);
+	printf( "pthread_cond_destroy cond->semaphore %x\n", cv->semaphore);
 #endif
 
-   do {
-      rc = DosCloseEventSem(cond->semaphore);
-      if (rc == 301) DosPostEventSem(cond->semaphore);
-   } while (rc == 301);
-   if (rc)
-      return EINVAL;
+	do {
+		rc = DosCloseEventSem(cv->semaphore);
+		if (rc == 301) DosPostEventSem(cv->semaphore);
+	} while (rc == 301);
+
+	(void) free (cv);
+
+	if (rc)
+		return EINVAL;
 
 	return 0;
 }
@@ -76,106 +104,140 @@ int pthread_cond_destroy(pthread_cond_t *cond)
 
 int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 {
-   APIRET   rc;
-   int	    rval;
+	APIRET	rc;
+	int		rval;
+	pthread_cond_t cv;
 
-   // initialize static semaphores created with PTHREAD_COND_INITIALIZER state.
-   if (cond->semaphore == -1)
-      pthread_cond_init( cond, NULL);
+	if (cond == NULL || *cond == NULL)
+	{
+		return EINVAL;
+	}
 
-   rval = 0;
-   cond->waiting++;
+	// initialize static semaphores created with PTHREAD_COND_INITIALIZER state.
+	if (*cond == -1)
+		pthread_cond_init( cond, NULL);
+
+	cv = *cond;
+
+	rval = 0;
+	cv->waiting++;
 
 #ifdef DEBUG
-   printf( "pthread_cond_wait cond->semaphore %x, cond->waiting %d\n", cond->semaphore, cond->waiting);
+	printf( "pthread_cond_wait cond->semaphore %x, cond->waiting %d\n", cv->semaphore, cv->waiting);
 #endif
 
-   if (mutex) pthread_mutex_unlock(mutex);
+	if (mutex) pthread_mutex_unlock(mutex);
 
-   rc = DosWaitEventSem(cond->semaphore,SEM_INDEFINITE_WAIT);
-   if (rc != 0)
-      rval = EINVAL;
+	rc = DosWaitEventSem(cv->semaphore,SEM_INDEFINITE_WAIT);
+	if (rc != 0)
+		rval = EINVAL;
 
-   if (mutex) pthread_mutex_lock(mutex);
+	if (mutex) pthread_mutex_lock(mutex);
 
-   cond->waiting--;
+	cv->waiting--;
 
-   return rval;
+	return rval;
 }
 
 int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 			   struct timespec const *abstime)
 {
-   struct timeb curtime;
-   long timeout;
-   APIRET   rc;
-   int	    rval;
+	struct timeb curtime;
+	long timeout;
+	APIRET	rc;
+	int		rval;
+	pthread_cond_t cv;
 
-   // initialize static semaphores created with PTHREAD_COND_INITIALIZER state.
-   if (cond->semaphore == -1)
-      pthread_cond_init( cond, NULL);
+	if (cond == NULL || *cond == NULL)
+	{
+		return EINVAL;
+	}
 
-   _ftime(&curtime);
-   timeout= ((long) (abstime->tv_sec - curtime.time)*1000L +
-		    (long)((abstime->tv_nsec/1000) - curtime.millitm)/1000L);
-   if (timeout < 0)				/* Some safety */
-      timeout = 0L;
+	// initialize static semaphores created with PTHREAD_COND_INITIALIZER state.
+	if (*cond == -1)
+		pthread_cond_init( cond, NULL);
 
-   rval = 0;
-   cond->waiting++;
+	cv = *cond;
+
+	_ftime(&curtime);
+	timeout= ((long) (abstime->tv_sec - curtime.time)*1000L +
+			(long)((abstime->tv_nsec/1000) - curtime.millitm)/1000L);
+	if (timeout < 0)				/* Some safety */
+		timeout = 0L;
+
+	rval = 0;
+	cv->waiting++;
 
 #ifdef DEBUG
-   printf( "pthread_cond_timedwait cond->semaphore %x, cond->waiting %d\n", cond->semaphore, cond->waiting);
+	printf( "pthread_cond_timedwait cond->semaphore %x, cond->waiting %d\n", cv->semaphore, cv->waiting);
 #endif
 
-   if (mutex) pthread_mutex_unlock(mutex);
+	if (mutex) pthread_mutex_unlock(mutex);
 
-   rc = DosWaitEventSem(cond->semaphore, timeout);
-   if (rc != 0)
-      rval = ETIMEDOUT;
+	rc = DosWaitEventSem(cv->semaphore, timeout);
+	if (rc != 0)
+		rval = ETIMEDOUT;
 
-   if (mutex) pthread_mutex_lock(mutex);
+	if (mutex) pthread_mutex_lock(mutex);
 
-   cond->waiting--;
+	cv->waiting--;
 
-   return rval;
+	return rval;
 }
 
 
 int pthread_cond_signal(pthread_cond_t *cond)
 {
-   APIRET   rc;
+	APIRET	rc;
+	pthread_cond_t cv;
 
-   // initialize static semaphores created with PTHREAD_COND_INITIALIZER state.
-   if (cond->semaphore == -1)
-      pthread_cond_init( cond, NULL);
+	if (cond == NULL || *cond == NULL)
+	{
+		return EINVAL;
+	}
+	
+	// initialize static semaphores created with PTHREAD_COND_INITIALIZER state.
+	if (*cond == -1)
+		pthread_cond_init( cond, NULL);
 
-   /* Bring the next thread off the condition queue: */
-   if (cond->waiting)
-      rc = DosPostEventSem(cond->semaphore);
-   return 0;
+	cv = *cond;
+
+	/* Bring the next thread off the condition queue: */
+	if (cv->waiting)
+		rc = DosPostEventSem(cv->semaphore);
+
+	return 0;
 }
 
 
 int pthread_cond_broadcast(pthread_cond_t *cond)
 {
-   int	    i;
-   APIRET   rc;
+	int	    i;
+	APIRET	rc;
+	int		rval;
+	pthread_cond_t cv;
 
-   // initialize static semaphores created with PTHREAD_COND_INITIALIZER state.
-   if (cond->semaphore == -1)
-      pthread_cond_init( cond, NULL);
+	if (cond == NULL || *cond == NULL)
+	{
+		return EINVAL;
+	}
 
-		/*
-		 * Enter a loop to bring all threads off the
-		 * condition queue:
-		 */
-   i = cond->waiting;
+	// initialize static semaphores created with PTHREAD_COND_INITIALIZER state.
+	if (*cond == -1)
+		pthread_cond_init( cond, NULL);
+
+	cv = *cond;
+
+	/*
+	* Enter a loop to bring all threads off the
+	* condition queue:
+	*/
+	i = cv->waiting;
 #ifdef DEBUG
-   printf( "pthread_cond_broadcast cond->semaphore %x, cond->waiting %d\n", cond->semaphore, cond->waiting);
+	printf( "pthread_cond_broadcast cond->semaphore %x, cond->waiting %d\n", cv->semaphore, cv->waiting);
 #endif
-
-   while (i--) rc = DosPostEventSem(cond->semaphore);
-
-   return 0 ;
+	
+	while (i--) rc = DosPostEventSem(cv->semaphore);
+	
+	return 0 ;
 }

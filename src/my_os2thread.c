@@ -10,133 +10,175 @@
 #include <sys/builtin.h>
 
 #include "pthread.h"
+#include "pthread_private.h"
 
 static pthread_mutex_t THR_LOCK_thread = PTHREAD_MUTEX_INITIALIZER;
 
 static pthread_key_t THR_self = -1;
 
-struct pthread_map
+/**
+ * Initiates the pending structures data.
+ *
+ * @returns 0 on success.
+ * @returns -1 on failure.
+ */
+int _pthreadInit(void)
 {
-  ULONG		  hThread;
-  pthread_handler func;
-  void *	  param;
-  void *	  rc;
-  BOOL            done;
-  int             detachState;
-  pthread_mutex_t cancelLock;	/* Used for async-cancel safety */
-};
+	if (THR_LOCK_thread >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
+		if (pthread_mutex_init(&THR_LOCK_thread,NULL)==-1)
+			return -1; // fail
 
+	if (THR_self == -1)
+		if (pthread_key_create(&THR_self,NULL)==-1)
+			return -1; // fail
+}
 
+/**
+ * initialize global dll loading/unloading.
+ *
+ * @returns 1 on success.
+ * @returns 0 on failure.
+ */
+unsigned long _System _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
+{
+	APIRET rc;
+
+	switch (ulFlag) {
+	case 0:
+	{
+		if (_CRT_init() != 0)
+		return 0UL;
+		__ctordtorInit();
+		
+		// init
+		_pthreadInit();
+		break;
+	}
+
+	case 1:
+	{
+		__ctordtorTerm();
+		_CRT_term();
+		break;
+	}
+
+	default:
+		return 0UL;
+	}
+
+	// success
+	return 1UL;
+}
+
+/*
+ *
+*/
 static pthread_handler_decl(pthread_start,param)
 {
-  struct pthread_map* map = (struct pthread_map*) param;
-  pthread_handler func = map->func;
-  void *func_param = map->param;
+	pthread_t thread = (pthread_t) param;
+	pthread_handler func = thread->func;
+	void *func_param = thread->param;
 
-  // store data structure pointer in thread self memory
-  pthread_setspecific(THR_self, map);
+	// store data structure pointer in thread self memory
+	pthread_setspecific(THR_self, thread);
 
-  // wait for beginthread to return
-  pthread_mutex_lock(&THR_LOCK_thread);
-  pthread_mutex_unlock(&THR_LOCK_thread);
-  
-  // thread about to start
-  map->rc = (*func)(func_param);
-  // terminate this thread and free resources
-  pthread_exit( map->rc);
+	// wait for beginthread to return
+	pthread_mutex_lock(&THR_LOCK_thread);
+	pthread_mutex_unlock(&THR_LOCK_thread);
 
-  // should never get here!
-  return 0;				  /* Safety */
+	// thread about to start
+	thread->rc = (*func)(func_param);
+	// terminate this thread and free resources
+	pthread_exit( thread->rc);
+
+	// should never get here!
+	return 0;				  /* Safety */
 }
 
 int pthread_create(pthread_t *thread_id, const pthread_attr_t *attr,
 		   pthread_handler func, void *param)
 {
-  struct pthread_map *map;
+	pthread_t thread;
 
-  if (!THR_LOCK_thread)
-    if (pthread_mutex_init(&THR_LOCK_thread,NULL)==-1)
-      return -1; // fail
- 
-  if (THR_self == -1)
-    if (pthread_key_create(&THR_self,NULL)==-1)
-      return -1; // fail
+	if (THR_LOCK_thread >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
+		_pthreadInit();
 
-  // allocate thread private data structure
-  map=(struct pthread_map *)calloc(1,sizeof(*map));
-  if (!map)
-    return(-1);
+	// allocate thread private data structure
+	thread = (pthread_t)calloc(1,sizeof(*thread));
+	if (!thread)
+		return(-1);
 
-  memset( map, 0, sizeof(struct pthread_map));
-  map->func=func;
-  map->param=param;
-  map->detachState = PTHREAD_CREATE_JOINABLE;
-  map->cancelLock = PTHREAD_MUTEX_INITIALIZER;
-  // set thread attributes
-  if (attr != NULL) {
-    map->detachState = attr->detachstate;
-  }
+	thread->func=func;
+	thread->param=param;
+	thread->detachState = PTHREAD_CREATE_JOINABLE;
+	thread->cancelLock = PTHREAD_MUTEX_INITIALIZER;
+	// set thread attributes
+	if (attr != NULL) {
+		thread->detachState = (*attr)->detachstate;
+	}
 
-  pthread_mutex_lock(&THR_LOCK_thread);
+	pthread_mutex_lock(&THR_LOCK_thread);
 
-  map->hThread=(ULONG)_beginthread((void( *)(void *)) pthread_start, NULL,
-			        attr ? (attr->dwStackSize ? attr->dwStackSize : 65535) : 65535, 
-				(void*) map);
-  // return pointer to caller
-  *thread_id = map;
-  // set thread priority
-  if (attr != NULL) {
-    pthread_setprio(map->hThread, attr->priority);
-  }
+	thread->hThread=(ULONG)_beginthread((void( *)(void *)) pthread_start, NULL,
+			        attr ? ((*attr)->dwStackSize ? (*attr)->dwStackSize : 65535) : 65535, 
+				(void*) thread);
 
-  // data initialized, allow thread to run
-  pthread_mutex_unlock(&THR_LOCK_thread);
+	// return pointer to caller
+	*thread_id = thread;
 
-  if (map->hThread == (ULONG) -1) {
-    int error=errno;
-    free(map);
-    return(error ? error : -1);
-  }
+	// set thread priority
+	if (attr != NULL) {
+		pthread_setprio(thread->hThread, (*attr)->priority);
+	}
 
-  // ok
-  return(0);
+	// data initialized, allow thread to run
+	pthread_mutex_unlock(&THR_LOCK_thread);
+
+	if (thread->hThread == (ULONG) -1) {
+		int error=errno;
+		free(thread);
+		return(error ? error : -1);
+	}
+
+	// ok
+	return(0);
 }
 
 
 void pthread_exit(void *a)
 {
-  // get data structure pointer from thread self memory
-  struct pthread_map* map = (struct pthread_map*) pthread_getspecific(THR_self);
+	// get data structure pointer from thread self memory
+	pthread_t thread = (pthread_t) pthread_getspecific(THR_self);
+	
+	// thread has ended, pthread_join is not allowed to wait for thread
+	thread->done = TRUE;
+	thread->rc = a;
+	
+	// free resources for detached threads
+	if (thread->detachState == PTHREAD_CREATE_DETACHED) {
+		free( thread);
+		pthread_setspecific(THR_self, NULL);
+	}
 
-  // thread has ended, pthread_join is not allowed to wait for thread
-  map->done = TRUE;
-  map->rc = a;
+	// thread is joinable, pthread_join is supposed to be called from main thread
 
-  // free resources for detached threads
-  if (map->detachState == PTHREAD_CREATE_DETACHED) {
-    free( map);
-    pthread_setspecific(THR_self, NULL);
-  }
-
-  // thread is joinable, pthread_join is supposed to be called from main thread
-
-  // let libc terminate this thread
-  _endthread();
+	// let libc terminate this thread
+	_endthread();
 }
 
 int pthread_equal(pthread_t t1,pthread_t t2)
 {
-   return ( t1 == t2);
+	return ( t1 == t2);
 }
 
 void pthread_setprio( int a, int b)
 {
-   DosSetPriority(PRTYS_THREAD,PRTYC_NOCHANGE, b, a);   
+	DosSetPriority(PRTYS_THREAD,PRTYC_NOCHANGE, b, a);   
 }
 
 int pthread_dummy(int ret)
 {
-  return ret;
+	return ret;
 }
 
 pthread_t
@@ -161,69 +203,68 @@ pthread_self (void)
       * ------------------------------------------------------
       */
 {
-  struct pthread_map* self;
-
-  self = (struct pthread_map*) pthread_getspecific(THR_self);
-  if (self == NULL)
-    {
-      /*
-       * Need to create an implicit 'self' for the currently
-       * executing thread.
-       */
-      self=(struct pthread_map *)calloc(1,sizeof(*self));
-      if (self != NULL)
+	pthread_t thread;
+	
+	thread = (pthread_t) pthread_getspecific(THR_self);
+	if (thread == NULL)
 	{
-	  /*
-	   * This is a non-POSIX thread which has chosen to call
-	   * a POSIX threads function for some reason. We assume that
-	   * it isn't joinable, but we do assume that it's
-	   * (deferred) cancelable.
-	   */
-	  self->detachState = PTHREAD_CREATE_DETACHED;
-	  self->hThread = _gettid();
-          pthread_setspecific(THR_self, self);
+		/*
+		* Need to create an implicit 'self' for the currently
+		* executing thread.
+		*/
+		thread=(pthread_t)calloc(1,sizeof(*thread));
+		if (thread != NULL)
+		{
+			/*
+			* This is a non-POSIX thread which has chosen to call
+			* a POSIX threads function for some reason. We assume that
+			* it isn't joinable, but we do assume that it's
+			* (deferred) cancelable.
+			*/
+			thread->detachState = PTHREAD_CREATE_DETACHED;
+			thread->hThread = _gettid();
+			pthread_setspecific(THR_self, thread);
+		}
 	}
-    }
-
-  return (self);
-
-}				/* pthread_self */
+	
+	return (thread);
+} /* pthread_self */
 
 /* 
  * pthread_join - Causes the calling thread to wait for the termination of a specified thread
 */
-int pthread_join( pthread_t thread, pthread_addr_t *status)
+int pthread_join( pthread_t thread, void **status)
 {
-  struct pthread_map* self = (struct pthread_map*) pthread_self();
-  // get data structure
-  struct pthread_map* map = (struct pthread_map*) thread;
-  APIRET rc;
+	pthread_t self = (pthread_t) pthread_self();
+	// get data structure
+	pthread_t map = (pthread_t) thread;
+	APIRET rc;
 
-  // not valid for same thread
-  if (self == thread) 
-      return EDEADLK;
+	// not valid for same thread
+	if (self == thread) 
+		return EDEADLK;
 
-  // not valid for detached thread
-  if (map->detachState == PTHREAD_CREATE_DETACHED)
-      return EINVAL;
+	// not valid for detached thread
+	if (map->detachState == PTHREAD_CREATE_DETACHED)
+		return EINVAL;
 
-  // now wait for thread end
-  if (!map->done) {
-    rc = DosWaitThread(&map->hThread, DCWW_WAIT);
-    if (rc == ERROR_INVALID_THREADID)
-      return ESRCH;
-    if (rc != NO_ERROR)
-      return EINVAL;
-  }
+	// now wait for thread end
+	if (!map->done) {
+		rc = DosWaitThread(&map->hThread, DCWW_WAIT);
+		if (rc == ERROR_INVALID_THREADID)
+			return ESRCH;
+		if (rc != NO_ERROR)
+			return EINVAL;
+	}
 
-  // thread ended, get value
-  if (status != NULL)
-    *status = map->rc;
+	// thread ended, get value
+	if (status != NULL)
+		*status = map->rc;
 
-  // free resources
-  free( map);
+	// free resources
+	free( map);
 
-  return 0;
+	return 0;
 }
 
 void pthread_cleanup_push(void (*routine) (void *), void *routine_arg)
@@ -236,30 +277,30 @@ void pthread_cleanup_pop(int execute)
 
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
 {
-  if (once_control == NULL || init_routine == NULL)
-    {
-      return EINVAL;
-    }
-
-  if (__atomic_cmpxchg32((unsigned*)&once_control->done, 0, 0)) /* MBR fence */
-    {
-      pthread_mutex_lock(&once_control->lock);
-
-      if (!once_control->done)
+	if (once_control == NULL || init_routine == NULL)
 	{
-	  (*init_routine)();
-	  once_control->done = PTW32_TRUE;
+		return EINVAL;
 	}
 
-      pthread_mutex_unlock(&once_control->lock);
-    }
+	if (__atomic_cmpxchg32((unsigned*)&once_control->done, 0, 0)) /* MBR fence */
+	{
+		pthread_mutex_lock(&once_control->lock);
+		
+		if (!once_control->done)
+		{
+			(*init_routine)();
+			once_control->done = PTW32_TRUE;
+		}
+		
+		pthread_mutex_unlock(&once_control->lock);
+	}
 
-  return 0;
+	return 0;
 }
 
 void pthread_yield(void)
 {
-    DosSleep(0);
+	DosSleep(0);
 }
 
 int pthread_setcancelstate(int state, int *oldstate)
@@ -310,77 +351,76 @@ pthread_detach (pthread_t thread)
       * ------------------------------------------------------
       */
 {
-  // get data structure
-  struct pthread_map* map = (struct pthread_map*) thread;
-  int result;
+	// get data structure
+	pthread_t map = (pthread_t) thread;
+	int result;
 #if 0
-  BOOL destroyIt = PTW32_FALSE;
+	BOOL destroyIt = PTW32_FALSE;
 #endif
-
-  DosEnterCritSec();
-
-  if (NULL == map)
-    {
-      result = ESRCH;
-    }
-  else if (PTHREAD_CREATE_DETACHED == map->detachState)
-    {
-      result = EINVAL;
-    }
-  else
-    {
-      /*
-       * Joinable ptw32_thread_t structs are not scavenged until
-       * a join or detach is done. The thread may have exited already,
-       * but all of the state and locks etc are still there.
-       */
-      result = 0;
-
-      if (pthread_mutex_lock (&map->cancelLock) == 0)
+	
+	DosEnterCritSec();
+	
+	if (NULL == map)
 	{
-	  map->detachState = PTHREAD_CREATE_DETACHED;
+		result = ESRCH;
+	}
+	else if (PTHREAD_CREATE_DETACHED == map->detachState)
+	{
+		result = EINVAL;
+	}
+	else
+	{
+		/*
+		* Joinable ptw32_thread_t structs are not scavenged until
+		* a join or detach is done. The thread may have exited already,
+		* but all of the state and locks etc are still there.
+		*/
+		result = 0;
+		
+		if (pthread_mutex_lock (&map->cancelLock) == 0)
+		{
+			map->detachState = PTHREAD_CREATE_DETACHED;
 #if 0 // YD state not implemented
-	  if (map->state != PThreadStateLast)
-	    {
-	      map->detachState = PTHREAD_CREATE_DETACHED;
-	    }
-	  else if (map->detachState != PTHREAD_CREATE_DETACHED)
-	    {
-	      /*
-	       * Thread is joinable and has exited or is exiting.
-	       */
-	      destroyIt = PTW32_TRUE;
-	    }
+			if (map->state != PThreadStateLast)
+			{
+				map->detachState = PTHREAD_CREATE_DETACHED;
+			}
+			else if (map->detachState != PTHREAD_CREATE_DETACHED)
+			{
+				/*
+				* Thread is joinable and has exited or is exiting.
+				*/
+				destroyIt = PTW32_TRUE;
+			}
 #endif
-	  (void) pthread_mutex_unlock (&map->cancelLock);
+			(void) pthread_mutex_unlock (&map->cancelLock);
+		}
+		else
+		{
+			/* cancelLock shouldn't fail, but if it does ... */
+			result = ESRCH;
+		}
 	}
-      else
-	{
-	  /* cancelLock shouldn't fail, but if it does ... */
-	  result = ESRCH;
-	}
-    }
 
-  DosExitCritSec();
+	DosExitCritSec();
 
 #if 0 // YD state not implemented
-  if (result == 0)
-    {
-      /* Thread is joinable */
-
-      if (destroyIt)
+	if (result == 0)
 	{
-	  /* The thread has exited or is exiting but has not been joined or
-	   * detached. Need to wait in case it's still exiting.
-	   */
-	  (void) WaitForSingleObject(tp->threadH, INFINITE);
-	  ptw32_threadDestroy (thread);
+		/* Thread is joinable */
+		
+		if (destroyIt)
+		{
+			/* The thread has exited or is exiting but has not been joined or
+			* detached. Need to wait in case it's still exiting.
+			*/
+			(void) WaitForSingleObject(tp->threadH, INFINITE);
+			ptw32_threadDestroy (thread);
+		}
 	}
-    }
 #endif
-
-  return (result);
-
+	
+	return (result);
 }				/* pthread_detach */
 
 int
@@ -413,30 +453,73 @@ pthread_kill (pthread_t thread, int sig)
       * ------------------------------------------------------
       */
 {
-  int result = 0;
+	int result = 0;
 
-  DosEnterCritSec();
+	DosEnterCritSec();
 
-  // get data structure
-  struct pthread_map* map = (struct pthread_map*) thread;
+	// get data structure
+	pthread_t map = (pthread_t) thread;
 
-  if (NULL == map
-      || TRUE == map->done
-      || 0 == map->hThread)
-    {
-      result = ESRCH;
-    }
+	if (NULL == map
+	  || TRUE == map->done
+	  || 0 == map->hThread)
+	{
+		result = ESRCH;
+	}
 
-  DosExitCritSec();
+	DosExitCritSec();
 
-  if (0 == result && 0 != sig)
-    {
-      /*
-       * Currently does not support any signals.
-       */
-      result = EINVAL;
-    }
+	if (0 == result && 0 != sig)
+	{
+		/*
+		* Currently does not support any signals.
+		*/
+		result = EINVAL;
+	}
 
-  return result;
-
+	return result;
 }				/* pthread_kill */
+
+int
+pthread_cancel (pthread_t thread)
+     /*
+      * ------------------------------------------------------
+      * DOCPUBLIC
+      *      This function requests cancellation of 'thread'.
+      *
+      * PARAMETERS
+      *      thread
+      *              reference to an instance of pthread_t
+      *
+      *
+      * DESCRIPTION
+      *      This function requests cancellation of 'thread'.
+      *      NOTE: cancellation is asynchronous; use pthread_join to
+      *                wait for termination of 'thread' if necessary.
+      *
+      * RESULTS
+      *              0               successfully requested cancellation,
+      *              ESRCH           no thread found corresponding to 'thread',
+      *              ENOMEM          implicit self thread create failed.
+      * ------------------------------------------------------
+      */
+{
+	int result;
+	int cancel_self;
+	pthread_t self;
+
+	result = pthread_kill (thread, 0);
+
+	if (0 != result)
+	{
+		return result;
+	}
+
+	if ((self = pthread_self ()) == NULL)
+	{
+		return ENOMEM;
+	};
+
+	return (result);
+}
+

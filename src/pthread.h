@@ -4,7 +4,6 @@
 
 #include <errno.h>
 #include <time.h>
-#include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,32 +17,29 @@ enum {
   PTW32_TRUE = (! PTW32_FALSE)
 };
 
+typedef struct pthread_t_ * pthread_t;
+typedef struct pthread_attr_t_ * pthread_attr_t;
+typedef struct pthread_once_t_ pthread_once_t;
+typedef struct pthread_key_t_ * pthread_key_t;
+typedef struct pthread_mutex_t_ * pthread_mutex_t;
+typedef struct pthread_mutexattr_t_ * pthread_mutexattr_t;
+typedef struct pthread_cond_t_ * pthread_cond_t;
+typedef struct pthread_condattr_t_ * pthread_condattr_t;
+
+struct pthread_once_t_
+{
+  unsigned        		done;        /* indicates if user function has been executed */
+  pthread_mutex_t lock;
+  int          			reserved1;
+  int          			reserved2;
+};
+
 /*
  * Flags for once initialization.
  */
 #define PTHREAD_NEEDS_INIT  0
 #define PTHREAD_DONE_INIT   1
 #define PTHREAD_COND_INITIALIZER {-1,-1}
-
-
-typedef int     	pthread_key_t;
-typedef uint32_t	pthread_mutex_t;
-typedef void*		pthread_t;
-
-typedef struct thread_attr {
-    uint32_t 	dwStackSize ;
-    uint32_t 	dwCreatingFlag ;
-    int 		priority ;
-    int         detachstate;
-} pthread_attr_t ;
-
-typedef struct { int dummy; } pthread_condattr_t;
-typedef struct {
-    int		waiting;
-    uint32_t	semaphore;
-} pthread_cond_t;
-
-typedef void	*pthread_addr_t;
 
 #define pthread_handler_decl(A,B) void * A(void *B)
 typedef void * (*pthread_handler)(void *);
@@ -52,7 +48,7 @@ int pthread_dummy(int ret);
 
 int pthread_create(pthread_t *,const pthread_attr_t *,pthread_handler,void *);
 pthread_t pthread_self(void);
-int pthread_join(  pthread_t thread, pthread_addr_t *status);
+int pthread_join(  pthread_t thread, void **status);
 
 int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr);
 int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
@@ -188,14 +184,6 @@ enum
 #define PTHREAD_RECURSIVE_MUTEX_INITIALIZER ((pthread_mutex_t) -2)
 #define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER ((pthread_mutex_t) -3)
 
-struct pthread_mutexattr_t_
-{
-  int pshared;
-  int kind;
-};
-typedef struct pthread_mutexattr_t_ * pthread_mutexattr_t;
-
-
 int pthread_mutex_init (pthread_mutex_t *, const pthread_mutexattr_t *);
 int pthread_mutex_lock (pthread_mutex_t *);
 int pthread_mutex_trylock (pthread_mutex_t *);
@@ -219,16 +207,7 @@ int pthread_atfork(void (*prepare)(void), void (*parent)(void),void (*child)(voi
  */
 #define PTHREAD_ONCE_INIT       { PTW32_FALSE, PTHREAD_MUTEX_INITIALIZER, 0, 0}
 
-struct pthread_once_t_
-{
-  unsigned        done;        /* indicates if user function has been executed */
-  pthread_mutex_t lock;
-  int          reserved1;
-  int          reserved2;
-};
-typedef struct pthread_once_t_ pthread_once_t;
 int pthread_once(pthread_once_t *once_control, void (*init_routine)(void));
-
 
 #ifdef __cplusplus
 } // extern "C"

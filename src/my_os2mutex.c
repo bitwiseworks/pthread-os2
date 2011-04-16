@@ -43,14 +43,30 @@
 
 
 #include "pthread.h"
+#include "pthread_private.h"
 
 int
 pthread_mutex_init(pthread_mutex_t * mutex,
 		   const pthread_mutexattr_t * mutex_attr)
 {
 	APIRET		rc = 0;
+	pthread_mutex_t mx;
 
-	rc = DosCreateMutexSem( NULL,(PHMTX)mutex,0,0);
+	if (mutex == NULL)
+	{
+		return EINVAL;
+	}
+
+	mx = (pthread_mutex_t) calloc (1, sizeof (*mx));
+	
+	if (mx == NULL)
+	{
+		return ENOMEM;
+	}
+
+	rc = DosCreateMutexSem( NULL,(PHMTX)&mx->sem,0,0);
+
+	*mutex = mx;
 
 	/* Return the completion status: */
 	return (0);
@@ -60,14 +76,17 @@ int
 pthread_mutex_destroy(pthread_mutex_t * mutex)
 {
 	APIRET		rc = 0;
+	pthread_mutex_t mx;
 
+	mx = *mutex;
 
 	do {
-    rc = DosCloseMutexSem(*mutex);
-    if (rc == 301) DosReleaseMutexSem(*mutex);
-  } while (rc == 301);
+		rc = DosCloseMutexSem(mx->sem);
+		if (rc == 301) DosReleaseMutexSem(mx->sem);
+	} while (rc == 301);
 
-  *mutex = 0;
+	free (mx);
+	*mutex = NULL;
 
 	/* Return the completion status: */
 	return (0);
@@ -78,19 +97,22 @@ int
 pthread_mutex_lock(pthread_mutex_t * mutex)
 {
 	APIRET		rc = 0;
+	pthread_mutex_t mx;
 
-   // initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-   if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
-      DosEnterCritSec();
-      if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
-         pthread_mutex_init( mutex, NULL);
-      DosExitCritSec();
-   }
+	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
+	if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
+		DosEnterCritSec();
+		if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
+			pthread_mutex_init( mutex, NULL);
+		DosExitCritSec();
+	}
 
-   rc = DosRequestMutexSem(*mutex,SEM_INDEFINITE_WAIT);
-   if (rc)
-      return(EINVAL);
-
+	mx = *mutex;
+	
+	rc = DosRequestMutexSem(mx->sem,SEM_INDEFINITE_WAIT);
+	if (rc)
+		return(EINVAL);
+	
 	/* Return the completion status: */
 	return (0);
 }
@@ -99,16 +121,19 @@ int
 pthread_mutex_trylock(pthread_mutex_t * mutex)
 {
 	APIRET		rc = 0;
+	pthread_mutex_t mx;
 
 	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-   if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
-      DosEnterCritSec();
-      if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
-         pthread_mutex_init( mutex, NULL);
-      DosExitCritSec();
-   }
+	if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
+		DosEnterCritSec();
+		if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
+			pthread_mutex_init( mutex, NULL);
+		DosExitCritSec();
+	}
 
-	rc = DosRequestMutexSem(*mutex,SEM_IMMEDIATE_RETURN);
+	mx = *mutex;
+
+	rc = DosRequestMutexSem(mx->sem,SEM_IMMEDIATE_RETURN);
 	if (rc) {
 		switch(rc) {
 		case ERROR_INVALID_HANDLE :
@@ -128,17 +153,19 @@ int
 pthread_mutex_unlock(pthread_mutex_t * mutex)
 {
 	APIRET		rc = 0;
+	pthread_mutex_t mx;
 
+	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
+	if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
+		DosEnterCritSec();
+		if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
+			pthread_mutex_init( mutex, NULL);
+		DosExitCritSec();
+	}
 
-   // initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-   if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
-      DosEnterCritSec();
-      if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
-         pthread_mutex_init( mutex, NULL);
-      DosExitCritSec();
-   }
+	mx = *mutex;
 
-   rc = DosReleaseMutexSem(*mutex);
+	rc = DosReleaseMutexSem(mx->sem);
 
 	/* Return the completion status: */
 	return (0);
@@ -355,3 +382,4 @@ pthread_mutexattr_gettype (pthread_mutexattr_t * attr, int *kind)
 
   return (result);
 }
+

@@ -1,53 +1,73 @@
 #define INCL_DOS
 #include <os2.h>
 
+#include <malloc.h>
 #include <process.h>
 #include <strings.h>
 #include <sys/timeb.h>
 
 #include "pthread.h"
+#include "pthread_private.h"
 
 
 
-int pthread_attr_init(pthread_attr_t *connect_att)
+int pthread_attr_init(pthread_attr_t *attr)
 {
-  connect_att->dwStackSize	= 0;
-  connect_att->dwCreatingFlag	= 0;
-  connect_att->priority		= 0;
-  connect_att->detachstate	= PTHREAD_CREATE_JOINABLE;
-  return 0;
+	pthread_attr_t attr_result;
+
+	if (attr == NULL)
+	{
+		/* This is disallowed. */
+		return EINVAL;
+	}
+	
+	attr_result = (pthread_attr_t) malloc (sizeof (*attr_result));
+	
+	if (attr_result == NULL)
+	{
+		return ENOMEM;
+	}
+	
+	attr_result->dwStackSize	= 0;
+	attr_result->dwCreatingFlag	= 0;
+	attr_result->priority		= 0;
+	attr_result->detachstate	= PTHREAD_CREATE_JOINABLE;
+	
+	*attr = attr_result;
+	
+	return 0;
 }
 
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize)
 {
-  if (attr)
-    *stacksize = attr->dwStackSize;
-  else
-    return EINVAL;
-  return 0;
+	if (*attr)
+		*stacksize = (*attr)->dwStackSize;
+	else
+		return EINVAL;
+	return 0;
 }
 
 int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize)
 {
-  if (attr)
-    attr->dwStackSize = stacksize;
-  else
-    return EINVAL;
-  return 0;
+	if (*attr)
+		(*attr)->dwStackSize = stacksize;
+	else
+		return EINVAL;
+	return 0;
 }
 
-int pthread_attr_setprio(pthread_attr_t *connect_att,int priority)
+int pthread_attr_setprio(pthread_attr_t *attr,int priority)
 {
-  connect_att->priority=priority;
-  return 0;
+	(*attr)->priority=priority;
+	return 0;
 }
 
-int pthread_attr_destroy(pthread_attr_t *connect_att)
+int pthread_attr_destroy(pthread_attr_t *attr)
 {
-  bzero( connect_att,sizeof(*connect_att));
-  return 0;
+	free (*attr);
+	*attr = NULL;
+	return 0;
 }
-
 
 int
 pthread_attr_setdetachstate (pthread_attr_t * attr, int detachstate)
@@ -97,7 +117,7 @@ pthread_attr_setdetachstate (pthread_attr_t * attr, int detachstate)
       return EINVAL;
     }
 
-  attr->detachstate = detachstate;
+  (*attr)->detachstate = detachstate;
   return 0;
 }
 
@@ -146,6 +166,6 @@ pthread_attr_getdetachstate (const pthread_attr_t * attr, int *detachstate)
       return EINVAL;
     }
 
-  *detachstate = attr->detachstate;
+  *detachstate = (*attr)->detachstate;
   return 0;
 }

@@ -1,4 +1,4 @@
-LIBRARY pthread INITINSTANCE TERMINSTANCE
+LIBRARY pthr01 INITINSTANCE TERMINSTANCE
 DATA MULTIPLE
 EXPORTS
   ; segment TEXT32
@@ -7,6 +7,7 @@ EXPORTS
   "_pthread_attr_setstacksize"                                          ; magicseg='TEXT32' len=26
   "_pthread_attr_setprio"                                               ; magicseg='TEXT32' len=21
   "_pthread_attr_destroy"                                               ; magicseg='TEXT32' len=21
+  "_pthread_cancel"                                                     ; magicseg='TEXT32' len=21
   "_pthread_cond_destroy"                                               ; magicseg='TEXT32' len=21
   "_pthread_cond_init"                                                  ; magicseg='TEXT32' len=18
   "_pthread_cond_signal"                                                ; magicseg='TEXT32' len=20
@@ -45,3 +46,7 @@ EXPORTS
   "_TlsFree"                                                            ; magicseg='TEXT32' len=8
   "_TlsAlloc"                                                           ; magicseg='TEXT32' len=9
 
+_pthread_mutexattr_init
+_pthread_mutexattr_settype
+_pthread_mutexattr_destroy
+__pthreadInit

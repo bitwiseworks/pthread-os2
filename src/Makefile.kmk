@@ -38,8 +38,8 @@ pthread_g_LDFLAGS = -g -Zno-fork -Zmap -Zbin-files
 pthread_g_CLEAN = $(PATH_LIB)/pthread_g.a
 
 pthread_SOURCES = $(pthread_s_SOURCES) pthread.def
-pthread_CFLAGS = -s -O3 -march=pentium -mtune=pentium4 -Wall
-#pthread_CFLAGS.debug = -g -O0 -DDEBUG_PRINTF
+pthread_CFLAGS.release = -s -O3 -march=pentium -mtune=pentium4 -Wall
+pthread_CFLAGS.debug = -g -O0 -DDEBUG_PRINTF
 pthread_DEFS = 
 pthread_INCS = 
 pthread_LDFLAGS = -g -Zomf -Zno-fork -Zmap -Zbin-files
@@ -70,4 +70,5 @@ $(PATH_ROOT)/dist/$(PACKAGE_NAME): $(INSTARGET_pthread_g) $(INSTARGET_pthread)
 	$(call MSG_L1,Packing $@)
 	$(QUIET)$(MKDIR) -p $(PATH_ROOT)/dist                              
 	$(QUIET)$(REDIRECT) -C $(DEPTH) -- zip -9q $@ src/* -x src/*~ 
+	$(QUIET)$(REDIRECT) -C $(PATH_INS) -- mv bin/pthread.dll bin/pthr01.dll
 	$(QUIET)$(REDIRECT) -C $(PATH_INS) -- zip -9q $@ lib/* bin/* include/*
