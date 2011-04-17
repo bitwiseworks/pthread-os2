@@ -39,7 +39,7 @@ struct pthread_once_t_
  */
 #define PTHREAD_NEEDS_INIT  0
 #define PTHREAD_DONE_INIT   1
-#define PTHREAD_COND_INITIALIZER {-1,-1}
+#define PTHREAD_COND_INITIALIZER ((pthread_cond_t) -1)
 
 #define pthread_handler_decl(A,B) void * A(void *B)
 typedef void * (*pthread_handler)(void *);

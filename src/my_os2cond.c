@@ -114,7 +114,7 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 	}
 
 	// initialize static semaphores created with PTHREAD_COND_INITIALIZER state.
-	if (*cond == -1)
+	if (*cond == PTHREAD_COND_INITIALIZER)
 		pthread_cond_init( cond, NULL);
 
 	cv = *cond;
@@ -154,7 +154,7 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 	}
 
 	// initialize static semaphores created with PTHREAD_COND_INITIALIZER state.
-	if (*cond == -1)
+	if (*cond == PTHREAD_COND_INITIALIZER)
 		pthread_cond_init( cond, NULL);
 
 	cv = *cond;
@@ -197,7 +197,7 @@ int pthread_cond_signal(pthread_cond_t *cond)
 	}
 	
 	// initialize static semaphores created with PTHREAD_COND_INITIALIZER state.
-	if (*cond == -1)
+	if (*cond == PTHREAD_COND_INITIALIZER)
 		pthread_cond_init( cond, NULL);
 
 	cv = *cond;
@@ -223,7 +223,7 @@ int pthread_cond_broadcast(pthread_cond_t *cond)
 	}
 
 	// initialize static semaphores created with PTHREAD_COND_INITIALIZER state.
-	if (*cond == -1)
+	if (*cond == PTHREAD_COND_INITIALIZER)
 		pthread_cond_init( cond, NULL);
 
 	cv = *cond;
