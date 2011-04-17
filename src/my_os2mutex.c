@@ -82,8 +82,12 @@ pthread_mutex_destroy(pthread_mutex_t * mutex)
 
 	do {
 		rc = DosCloseMutexSem(mx->sem);
-		if (rc == 301) DosReleaseMutexSem(mx->sem);
-	} while (rc == 301);
+		if (rc == ERROR_SEM_BUSY) {
+			rc = DosReleaseMutexSem(mx->sem);
+			if (rc == ERROR_NOT_OWNER)
+				return EBUSY;
+		}
+	} while (rc == ERROR_SEM_BUSY);
 
 	free (mx);
 	*mutex = NULL;
