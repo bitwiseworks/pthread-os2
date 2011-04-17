@@ -204,6 +204,9 @@ pthread_self (void)
       */
 {
 	pthread_t thread;
+
+	if (THR_LOCK_thread >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
+		_pthreadInit();
 	
 	thread = (pthread_t) pthread_getspecific(THR_self);
 	if (thread == NULL)
