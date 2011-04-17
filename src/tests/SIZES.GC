@@ -1,0 +1,3 @@
+Sizes of pthreads-win32 structs
+-------------------------------
+                     pthread_t    4
