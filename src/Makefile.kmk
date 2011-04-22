@@ -24,22 +24,22 @@ pthread_s_SOURCES = \
 	my_os2key.c \
 	my_os2tls.c
 
-pthread_s_CFLAGS = -s -O3 -march=pentium -mtune=pentium4 -Wall
+pthread_s_CFLAGS = -Wall $(KCFLAGS)
 pthread_s_DEFS = 
 pthread_s_INCS = 
-pthread_s_LDFLAGS = -s -Zno-fork -Zmap -Zbin-files
+pthread_s_LDFLAGS = -g -Zomf -Zno-fork -Zmap -Zbin-files
 pthread_s_CLEAN = $(PATH_LIB)/pthread_s.a
 
 pthread_g_SOURCES = $(pthread_s_SOURCES)
 pthread_g_CFLAGS = -g -O0 -DDEBUG_PRINTF
 pthread_g_DEFS = 
 pthread_g_INCS = 
-pthread_g_LDFLAGS = -g -Zno-fork -Zmap -Zbin-files
+pthread_g_LDFLAGS = -g -Zomf -Zno-fork -Zmap -Zbin-files
 pthread_g_CLEAN = $(PATH_LIB)/pthread_g.a
 
 pthread_NAME = pthr01
 pthread_SOURCES = $(pthread_s_SOURCES) pthread.def
-pthread_CFLAGS.release = -s -O3 -march=pentium -mtune=pentium4 -Wall
+pthread_CFLAGS.release = -Wall $(KCFLAGS)
 pthread_CFLAGS.debug = -g -O0 -DDEBUG_PRINTF
 pthread_DEFS = 
 pthread_INCS = 
@@ -72,5 +72,10 @@ $(PATH_ROOT)/dist/$(PACKAGE_NAME): $(INSTARGET_pthread_g) $(INSTARGET_pthread)
 	$(call MSG_L1,Packing $@)
 	$(QUIET)$(MKDIR) -p $(PATH_ROOT)/dist                              
 	$(QUIET)$(REDIRECT) -C $(DEPTH) -- zip -9q $@ src/* -x src/*~ 
-	$(QUIET)$(REDIRECT) -C $(PATH_INS) -- mv bin/pthread.dll bin/pthr01.dll
 	$(QUIET)$(REDIRECT) -C $(PATH_INS) -- zip -9q $@ lib/* bin/* include/*
+
+# put build files into root dir
+build: $(INSTARGET_pthread_g) $(INSTARGET_pthread)
+	$(QUIET)cp $(PATH_INS)/bin/*.* $(PATH_ROOT)
+	$(QUIET)cp $(PATH_INS)/lib/*.* $(PATH_ROOT)
+	$(QUIET)cp $(PATH_INS)/include/*.* $(PATH_ROOT)
