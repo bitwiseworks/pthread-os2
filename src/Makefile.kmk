@@ -37,17 +37,19 @@ pthread_g_INCS =
 pthread_g_LDFLAGS = -g -Zno-fork -Zmap -Zbin-files
 pthread_g_CLEAN = $(PATH_LIB)/pthread_g.a
 
+pthread_NAME = pthr01
 pthread_SOURCES = $(pthread_s_SOURCES) pthread.def
 pthread_CFLAGS.release = -s -O3 -march=pentium -mtune=pentium4 -Wall
 pthread_CFLAGS.debug = -g -O0 -DDEBUG_PRINTF
 pthread_DEFS = 
 pthread_INCS = 
 pthread_LDFLAGS = -g -Zomf -Zno-fork -Zmap -Zbin-files
-pthread_CLEAN = $(PATH_BIN)/pthread.dll
+pthread_CLEAN = $(PATH_BIN)/pthr01.dll
 
 pthread_dll_TOOL = GCC3
+pthread_dll_NAME = pthread
 pthread_dll_SOURCES = pthread.def
-pthread_dll_CLEAN = $(PATH_LIB)/pthread_dll.a
+pthread_dll_CLEAN = $(PATH_LIB)/pthread.a
 
 # install some more files
 INSTALLS = pthread-headers
