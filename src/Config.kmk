@@ -5,5 +5,5 @@
 # edit this file to change version numbering
 # in bldlevel informations
 #
-VERSION	= 20110417
+VERSION	= 20110420
 BUILD	= os2

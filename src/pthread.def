@@ -7,6 +7,7 @@ EXPORTS
   "_pthread_attr_setstacksize"                                          ; magicseg='TEXT32' len=26
   "_pthread_attr_setprio"                                               ; magicseg='TEXT32' len=21
   "_pthread_attr_destroy"                                               ; magicseg='TEXT32' len=21
+  "_pthread_attr_setdetachstate"                                        ; magicseg='TEXT32' len=21
   "_pthread_cancel"                                                     ; magicseg='TEXT32' len=21
   "_pthread_cond_destroy"                                               ; magicseg='TEXT32' len=21
   "_pthread_cond_init"                                                  ; magicseg='TEXT32' len=18
