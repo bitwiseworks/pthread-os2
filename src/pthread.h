@@ -190,13 +190,18 @@ int pthread_mutex_trylock (pthread_mutex_t *);
 int pthread_mutex_unlock (pthread_mutex_t *);
 int pthread_mutex_destroy (pthread_mutex_t *);
 
+int pthread_mutexattr_init (pthread_mutexattr_t * attr);
+int pthread_mutexattr_destroy (pthread_mutexattr_t * attr);
+int pthread_mutexattr_settype (pthread_mutexattr_t * attr, int kind);
+int pthread_mutexattr_gettype (pthread_mutexattr_t * attr, int *kind);
 
 /* CANCEL */
 
 int pthread_setcancelstate(int state, int *oldstate);
 int pthread_setcanceltype(int type, int *oldtype);
 void pthread_testcancel(void);
-int pthread_atfork(void (*prepare)(void), void (*parent)(void),void (*child)(void)); 
+int pthread_cancel(pthread_t thread);
+int pthread_atfork(void (*prepare)(void), void (*parent)(void),void (*child)(void));
 
 /*
  * ====================
