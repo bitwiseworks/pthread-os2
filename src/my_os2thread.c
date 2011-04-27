@@ -18,7 +18,7 @@
 
 static pthread_mutex_t THR_LOCK_thread = PTHREAD_MUTEX_INITIALIZER;
 
-static pthread_key_t THR_self = -1;
+static pthread_key_t THR_self = (pthread_key_t)-1;
 
 /**
  * Initiates the pending structures data.
@@ -32,9 +32,11 @@ int _pthreadInit(void)
 		if (pthread_mutex_init(&THR_LOCK_thread,NULL)==-1)
 			return -1; // fail
 
-	if (THR_self == -1)
+	if (THR_self == (pthread_key_t)-1)
 		if (pthread_key_create(&THR_self,NULL)==-1)
 			return -1; // fail
+			
+	return 0;
 }
 
 /**
