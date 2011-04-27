@@ -39,6 +39,12 @@ int _pthreadInit(void)
 	return 0;
 }
 
+#ifndef NO_DYNAMIC_LIB
+int  _CRT_init(void);
+void _CRT_term(void);
+void __ctordtorInit(void);
+void __ctordtorTerm(void);
+
 /**
  * initialize global dll loading/unloading.
  *
@@ -75,6 +81,7 @@ unsigned long _System _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
 	// success
 	return 1UL;
 }
+#endif
 
 /*
  *
