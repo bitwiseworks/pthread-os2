@@ -38,6 +38,7 @@ EXPORTS
   "_pthread_setprio"                                                    ; magicseg='TEXT32' len=16
   "_pthread_exit"                                                       ; magicseg='TEXT32' len=13
   "_pthread_create"                                                     ; magicseg='TEXT32' len=15
+  "_pthread_detach"                                                     ; magicseg='TEXT32' len=15
   "_pthread_equal"                                                      ; magicseg='TEXT32' len=15
 
   "_TlsFreeThreadLocalMemory"                                           ; magicseg='TEXT32' len=25
