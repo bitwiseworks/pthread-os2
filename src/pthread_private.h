@@ -17,7 +17,7 @@ struct pthread_t_
 	BOOL            			done;
 	int             			detachState;
 	pthread_mutex_t	cancelLock;	/* Used for async-cancel safety */
-	EXCEPTIONREGISTRATIONRECORD exRegRec;
+	EXCEPTIONREGISTRATIONRECORD* pExRegRec;
 };
 
 struct pthread_attr_t_ {
