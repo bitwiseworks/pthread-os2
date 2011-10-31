@@ -27,15 +27,15 @@ pthread_s_SOURCES = \
 pthread_s_CFLAGS = -Wall -DNO_DYNAMIC_LIB $(KCFLAGS)
 pthread_s_DEFS = 
 pthread_s_INCS = 
-pthread_s_LDFLAGS = -g -Zomf -Zno-fork -Zmap -Zbin-files -Zhigh-mem
-pthread_s_CLEAN = $(PATH_LIB)/pthread_s.a
+pthread_s_LDFLAGS = -g -Zomf -Zmap -Zhigh-mem
+pthread_s_CLEAN = $(PATH_INST_LIB)/pthread_s.a
 
 pthread_g_SOURCES = $(pthread_s_SOURCES)
 pthread_g_CFLAGS = -g -O0 -DDEBUG_PRINTF -DNO_DYNAMIC_LIB
 pthread_g_DEFS = 
 pthread_g_INCS = 
-pthread_g_LDFLAGS = -g -Zomf -Zno-fork -Zmap -Zbin-files -Zhigh-mem
-pthread_g_CLEAN = $(PATH_LIB)/pthread_g.a
+pthread_g_LDFLAGS = -g -Zomf -Zmap -Zhigh-mem
+pthread_g_CLEAN = $(PATH_INST_LIB)/pthread_g.a
 
 pthread_NAME = pthr01
 pthread_SOURCES = $(pthread_s_SOURCES) pthread.def
@@ -43,13 +43,13 @@ pthread_CFLAGS.release = -Wall $(KCFLAGS)
 pthread_CFLAGS.debug = -g -O0 -DDEBUG_PRINTF
 pthread_DEFS = 
 pthread_INCS = 
-pthread_LDFLAGS = -g -Zomf -Zno-fork -Zmap -Zbin-files -Zhigh-mem
-pthread_CLEAN = $(PATH_BIN)/pthr01.dll
+pthread_LDFLAGS = -g -Zomf -Zmap -Zhigh-mem
+pthread_CLEAN = $(PATH_INST_BIN)/pthr01.dll
 
 pthread_dll_TOOL = GCC3
 pthread_dll_NAME = pthread
 pthread_dll_SOURCES = pthread.def
-pthread_dll_CLEAN = $(PATH_LIB)/pthread.a
+pthread_dll_CLEAN = $(PATH_INST_LIB)/pthread.a
 
 # install some more files
 INSTALLS = pthread-headers
