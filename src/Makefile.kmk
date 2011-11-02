@@ -76,6 +76,5 @@ $(PATH_ROOT)/dist/$(PACKAGE_NAME): $(INSTARGET_pthread_g) $(INSTARGET_pthread)
 
 # put build files into root dir
 build: $(INSTARGET_pthread_g) $(INSTARGET_pthread)
-	$(QUIET)cp $(PATH_INS)/bin/*.* $(PATH_ROOT)
 	$(QUIET)cp $(PATH_INS)/lib/*.* $(PATH_ROOT)
 	$(QUIET)cp $(PATH_INS)/include/*.* $(PATH_ROOT)
