@@ -43,7 +43,7 @@ pthread_CFLAGS.release = -Wall $(KCFLAGS)
 pthread_CFLAGS.debug = -g -O0 -DDEBUG_PRINTF
 pthread_DEFS = 
 pthread_INCS = 
-pthread_LDFLAGS = -g -Zomf -Zmap -Zhigh-mem
+pthread_LDFLAGS = -g -Zomf -Zmap -Zhigh-mem -Zdll
 pthread_CLEAN = $(PATH_INST_BIN)/pthr01.dll
 
 pthread_dll_TOOL = GCC3
