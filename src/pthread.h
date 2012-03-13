@@ -74,6 +74,7 @@ void *pthread_getspecific(pthread_key_t key);
 int pthread_setspecific(pthread_key_t key, const void *value);
 
 void  pthread_setprio( int, int);
+int pthread_detach (pthread_t thread);
 int pthread_kill (pthread_t thread, int sig);
 
 #define pthread_sigmask(A,B,C) sigprocmask((A),(B),(C))
