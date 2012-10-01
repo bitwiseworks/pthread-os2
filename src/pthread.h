@@ -26,6 +26,9 @@ typedef struct pthread_mutexattr_t_ * pthread_mutexattr_t;
 typedef struct pthread_cond_t_ * pthread_cond_t;
 typedef struct pthread_condattr_t_ * pthread_condattr_t;
 
+typedef struct pthread_rwlock_t_ * pthread_rwlock_t;
+typedef struct pthread_rwlockattr_t_ * pthread_rwlockattr_t;
+
 struct pthread_once_t_
 {
   unsigned        		done;        /* indicates if user function has been executed */
@@ -39,7 +42,10 @@ struct pthread_once_t_
  */
 #define PTHREAD_NEEDS_INIT  0
 #define PTHREAD_DONE_INIT   1
+
 #define PTHREAD_COND_INITIALIZER ((pthread_cond_t) -1)
+
+#define PTHREAD_RWLOCK_INITIALIZER ((pthread_rwlock_t) -1)
 
 #define pthread_handler_decl(A,B) void * A(void *B)
 typedef void * (*pthread_handler)(void *);
@@ -203,6 +209,40 @@ int pthread_setcanceltype(int type, int *oldtype);
 void pthread_testcancel(void);
 int pthread_cancel(pthread_t thread);
 int pthread_atfork(void (*prepare)(void), void (*parent)(void),void (*child)(void));
+
+/*
+ * Read-Write Lock Functions
+ */
+int pthread_rwlock_init(pthread_rwlock_t *lock,
+                                const pthread_rwlockattr_t *attr);
+
+int pthread_rwlock_destroy(pthread_rwlock_t *lock);
+
+int pthread_rwlock_tryrdlock(pthread_rwlock_t *);
+
+int pthread_rwlock_trywrlock(pthread_rwlock_t *);
+
+int pthread_rwlock_rdlock(pthread_rwlock_t *lock);
+
+int pthread_rwlock_timedrdlock(pthread_rwlock_t *lock,
+                                       const struct timespec *abstime);
+
+int pthread_rwlock_wrlock(pthread_rwlock_t *lock);
+
+int pthread_rwlock_timedwrlock(pthread_rwlock_t *lock,
+                                       const struct timespec *abstime);
+
+int pthread_rwlock_unlock(pthread_rwlock_t *lock);
+
+int pthread_rwlockattr_init (pthread_rwlockattr_t * attr);
+
+int pthread_rwlockattr_destroy (pthread_rwlockattr_t * attr);
+
+int pthread_rwlockattr_getpshared (const pthread_rwlockattr_t * attr,
+                                           int *pshared);
+
+int pthread_rwlockattr_setpshared (pthread_rwlockattr_t * attr,
+                                           int pshared);
 
 /*
  * ====================

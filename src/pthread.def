@@ -53,3 +53,11 @@ _pthread_mutexattr_init
 _pthread_mutexattr_settype
 _pthread_mutexattr_destroy
 __pthreadInit
+
+_pthread_rwlock_init
+_pthread_rwlock_destroy
+_pthread_rwlock_unlock
+_pthread_rwlock_tryrdlock
+_pthread_rwlock_rdlock
+_pthread_rwlock_trywrlock
+_pthread_rwlock_wrlock
