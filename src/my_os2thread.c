@@ -13,6 +13,8 @@
 #define INCL_FORKEXCEPTQ
 #include "exceptq.h"
 
+//#define DEBUG
+
 #include "pthread.h"
 #include "pthread_private.h"
 
@@ -279,8 +281,14 @@ int pthread_join( pthread_t thread, void **status)
 		return EINVAL;
 
 	// now wait for thread end
+#ifdef DEBUG
+	printf( "(#%d) pthread_join map->done %d, map->hThread %d\n", _gettid(), map->done, map->hThread);
+#endif
 	if (!map->done) {
 		rc = DosWaitThread(&map->hThread, DCWW_WAIT);
+#ifdef DEBUG
+	printf( "DosWaitThread rc %d, map->hThread %d\n", rc, map->hThread);
+#endif
 		if (rc == ERROR_INVALID_THREADID)
 			return ESRCH;
 		if (rc != NO_ERROR)

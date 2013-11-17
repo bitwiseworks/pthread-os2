@@ -65,7 +65,7 @@ int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)
 	cv->waiting=0;
 
 #ifdef DEBUG
-	printf( "pthread_cond_init cond->semaphore %x\n", cv->semaphore);
+	printf( "(#%d) pthread_cond_init cond->semaphore %x\n", _gettid(), cv->semaphore);
 #endif
 
 	*cond = cv;
@@ -85,7 +85,7 @@ int pthread_cond_destroy(pthread_cond_t *cond)
 	cv = *cond;
 
 #ifdef DEBUG
-	printf( "pthread_cond_destroy cond->semaphore %x\n", cv->semaphore);
+	printf( "(#%d) pthread_cond_destroy cond->semaphore %x\n", _gettid(), cv->semaphore);
 #endif
 
 	do {
@@ -123,7 +123,7 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 	cv->waiting++;
 
 #ifdef DEBUG
-	printf( "pthread_cond_wait cond->semaphore %x, cond->waiting %d\n", cv->semaphore, cv->waiting);
+	printf( "(#%d) pthread_cond_wait cond->semaphore %x, cond->waiting %d\n", _gettid(), cv->semaphore, cv->waiting);
 #endif
 
 	if (mutex) pthread_mutex_unlock(mutex);
@@ -135,6 +135,9 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 	if (mutex) pthread_mutex_lock(mutex);
 
 	cv->waiting--;
+#ifdef DEBUG
+	printf( "(#%d) pthread_cond_wait cond->semaphore %x, cond->waiting %d (exit)\n", _gettid(), cv->semaphore, cv->waiting);
+#endif
 
 	return rval;
 }
@@ -169,12 +172,18 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 	cv->waiting++;
 
 #ifdef DEBUG
-	printf( "pthread_cond_timedwait cond->semaphore %x, cond->waiting %d\n", cv->semaphore, cv->waiting);
+	printf( "(#%d) pthread_cond_timedwait cond->semaphore %x, cond->waiting %d\n", _gettid(), cv->semaphore, cv->waiting);
 #endif
 
 	if (mutex) pthread_mutex_unlock(mutex);
 
+#ifdef DEBUG
+	printf( "(#%d) pthread_cond_timedwait waiting timeout %d\n", _gettid(), timeout);
+#endif
 	rc = DosWaitEventSem(cv->semaphore, timeout);
+#ifdef DEBUG
+	printf( "(#%d) pthread_cond_timedwait waiting rc %d\n", _gettid(), rc);
+#endif
 	if (rc != 0)
 		rval = ETIMEDOUT;
 
@@ -203,8 +212,14 @@ int pthread_cond_signal(pthread_cond_t *cond)
 	cv = *cond;
 
 	/* Bring the next thread off the condition queue: */
+#ifdef DEBUG
+	printf( "(#%d) pthread_cond_signal cond->semaphore %x, cond->waiting %d\n", _gettid(), cv->semaphore, cv->waiting);
+#endif
 	if (cv->waiting)
 		rc = DosPostEventSem(cv->semaphore);
+#ifdef DEBUG
+	printf( "(#%d) pthread_cond_signal rc %d\n", _gettid(), rc);
+#endif
 
 	return 0;
 }
