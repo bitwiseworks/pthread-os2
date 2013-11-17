@@ -90,7 +90,7 @@ pthread_mutex_destroy(pthread_mutex_t * mutex)
 	} while (rc == ERROR_SEM_BUSY);
 
 	free (mx);
-	*mutex = NULL;
+	*mutex = PTHREAD_MUTEX_INITIALIZER;
 
 	/* Return the completion status: */
 	return (0);
