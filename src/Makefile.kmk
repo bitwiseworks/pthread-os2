@@ -25,7 +25,7 @@ pthread_s_SOURCES = \
 	my_os2key.c \
 	my_os2tls.c
 
-pthread_s_CFLAGS = -g -Zomf -std=c99 -Wall -DNO_DYNAMIC_LIB $(KCFLAGS)
+pthread_s_CFLAGS = -g -std=c99 -Wall -DNO_DYNAMIC_LIB $(KCFLAGS)
 pthread_s_DEFS = 
 pthread_s_INCS = 
 pthread_s_LDFLAGS = -g -Zomf -Zmap -Zhigh-mem
