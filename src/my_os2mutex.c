@@ -78,6 +78,14 @@ pthread_mutex_destroy(pthread_mutex_t * mutex)
 	APIRET		rc = 0;
 	pthread_mutex_t mx;
 
+	/* check NULL */
+	if (!mutex || !*mutex)
+		return EINVAL;
+
+	/* already destroyed or not initialized ? */
+	if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
+		return (0);
+
 	mx = *mutex;
 
 	do {
