@@ -72,7 +72,9 @@ ULONG	 TlsAlloc( void)
       break;
     }
   }
-  tls_storage[index] = 0;
+  ULONG* tls_array = (ULONG*) *tls_storage;
+  if (tls_array)
+    tls_array[index] = 0;
 
   pthread_mutex_unlock( &tls_mutex);
 
@@ -98,7 +100,9 @@ BOOL TlsFree( ULONG index)
   mask = (1 << index);
    if (tls_bits[ tlsidx] & mask) {
     tls_bits[tlsidx] &= ~mask;
-    tls_storage[index] = 0;
+    ULONG* tls_array = (ULONG*) *tls_storage;
+    if (tls_array)
+      tls_array[index] = 0;
     pthread_mutex_unlock( &tls_mutex);
     return TRUE;
   }
