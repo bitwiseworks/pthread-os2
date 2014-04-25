@@ -26,21 +26,31 @@
 
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
 {
-    return (*key=TlsAlloc())==0xFFFFFFFF;
+
+    if ((*(ULONG *)key = TlsAlloc()) != -1)
+        return 0;
+    errno = EAGAIN;
+    return -1;
 }
 
 int pthread_key_delete(pthread_key_t key)
 {
-    return TlsFree(key);
+    if (TlsFree((ULONG)key))
+        return 0;
+    errno = EINVAL;
+    return -1;
 }
 
 void *pthread_getspecific(pthread_key_t key)
 {
-    return TlsGetValue(key);
+    return TlsGetValue((ULONG)key);
 }
 
 int pthread_setspecific(pthread_key_t key, const void *value)
 {
-    return !TlsSetValue( key, (PVOID)value);
+    if (TlsSetValue((ULONG)key, (PVOID)value))
+        return 0;
+    errno = EINVAL;
+    return -1;
 }
 
