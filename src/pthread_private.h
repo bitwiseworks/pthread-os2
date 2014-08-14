@@ -8,6 +8,13 @@
 extern "C" {
 #endif
 
+/*
+ * Miscellaneous definitions.
+ */
+
+// set min stack size to 2MB as in pthread_create specs
+#define PTHREAD_STACK_DEFAULT                   (2*1024*1024)
+
 struct pthread_t_
 {
 	ULONG					hThread;
