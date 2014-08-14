@@ -120,6 +120,9 @@ int pthread_create(pthread_t *thread_id, const pthread_attr_t *attr,
 		   pthread_handler func, void *param)
 {
 	pthread_t thread;
+	// set min stack size to 2MB as in pthread_create specs
+	int minStackSize = 2*1024*1024;
+	int stackSize = 0;
 
 	if (THR_LOCK_thread >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
 		_pthreadInit();
@@ -140,9 +143,14 @@ int pthread_create(pthread_t *thread_id, const pthread_attr_t *attr,
 
 	pthread_mutex_lock(&THR_LOCK_thread);
 
+	// get min stack size if defined in environment
+	_getenv_int( "LIBC_THREAD_MIN_STACK_SIZE", &minStackSize);
+	if (attr != NULL)
+		stackSize = (*attr)->dwStackSize;
+	stackSize = (stackSize > minStackSize ? stackSize : minStackSize);
+
 	thread->hThread=(ULONG)_beginthread((void( *)(void *)) pthread_start, NULL,
-			        attr ? ((*attr)->dwStackSize ? (*attr)->dwStackSize : 65535) : 65535, 
-				(void*) thread);
+										stackSize, (void*) thread);
 
 	// return pointer to caller
 	*thread_id = thread;
