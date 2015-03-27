@@ -341,9 +341,10 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
 	return 0;
 }
 
-void pthread_yield(void)
+int pthread_yield(void)
 {
 	DosSleep(0);
+	return(0);
 }
 
 int pthread_setcancelstate(int state, int *oldstate)

@@ -99,7 +99,7 @@ int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);
 int pthread_attr_setdetachstate (pthread_attr_t * attr, int detachstate);
 int pthread_attr_getdetachstate (const pthread_attr_t * attr, int *detachstate);
 
-void pthread_yield(void);
+int pthread_yield(void);
 
 /*
  * ====================
