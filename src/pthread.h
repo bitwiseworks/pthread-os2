@@ -26,8 +26,18 @@ typedef struct pthread_mutexattr_t_ * pthread_mutexattr_t;
 typedef struct pthread_cond_t_ * pthread_cond_t;
 typedef struct pthread_condattr_t_ * pthread_condattr_t;
 
-typedef struct pthread_rwlock_t_ * pthread_rwlock_t;
+//
+// Read-write locks
+//
+
 typedef struct pthread_rwlockattr_t_ * pthread_rwlockattr_t;
+typedef struct pthread_rwlock_t_ * pthread_rwlock_t;
+
+#define PTHREAD_RWLOCK_INITIALIZER ((pthread_rwlock_t) -1)
+
+//
+//
+//
 
 struct pthread_once_t_
 {
@@ -44,8 +54,6 @@ struct pthread_once_t_
 #define PTHREAD_DONE_INIT   1
 
 #define PTHREAD_COND_INITIALIZER ((pthread_cond_t) -1)
-
-#define PTHREAD_RWLOCK_INITIALIZER ((pthread_rwlock_t) -1)
 
 #define pthread_handler_decl(A,B) void * A(void *B)
 typedef void * (*pthread_handler)(void *);
@@ -260,4 +268,3 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void));
 #endif
 
 #endif // __PTHREAD_H__
-

@@ -66,9 +66,28 @@ struct pthread_mutexattr_t_
 };
 
 
+//
+// Read-write locks
+//
+
+struct pthread_rwlockattr_t_
+{
+  int pshared;
+};
+
+struct pthread_rwlock_t_
+{
+  pthread_mutex_t mutex;
+  //handle_t shared_waiters;
+  //handle_t exclusive_waiters;
+  int num_shared_waiters;
+  int num_exclusive_waiters;
+  int num_active;
+  pthread_t owner;
+};
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
 #endif // __PTHREAD_PRIVATE_H__
-
