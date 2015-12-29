@@ -1,7 +1,9 @@
  
 #define INCL_DOS
 #define INCL_DOSERRORS
-#include <os2.h>
+#define INCL_EXAPIS
+#define INCL_EXAPIS_MAPPINGS
+#include <os2emx.h>
 
 #include <stdlib.h>
 #include <string.h>

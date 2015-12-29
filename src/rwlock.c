@@ -32,7 +32,9 @@
 // 
 
 #define INCL_DOS
-#include <os2.h>
+#define INCL_EXAPIS
+#define INCL_EXAPIS_MAPPINGS
+#include <os2emx.h>
 
 #include <malloc.h>
 
@@ -88,6 +90,7 @@ int pthread_rwlock_init(pthread_rwlock_t *_lock, const pthread_rwlockattr_t *_at
       return ENOMEM;
   }
 
+  lock->mutex = 0;
   lock->num_active = 0;
   //lock->exclusive_waiters = 0;
   lock->num_shared_waiters = 0;

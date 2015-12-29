@@ -1,5 +1,7 @@
 #define INCL_DOS
-#include <os2.h>
+#define INCL_EXAPIS
+#define INCL_EXAPIS_MAPPINGS
+#include <os2emx.h>
 
 #include <malloc.h>
 #include <process.h>
