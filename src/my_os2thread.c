@@ -404,8 +404,6 @@ pthread_detach (pthread_t thread)
 	BOOL destroyIt = PTW32_FALSE;
 #endif
 	
-	DosEnterCritSec();
-	
 	if (NULL == map)
 	{
 		result = ESRCH;
@@ -447,8 +445,6 @@ pthread_detach (pthread_t thread)
 			result = ESRCH;
 		}
 	}
-
-	DosExitCritSec();
 
 #if 0 // YD state not implemented
 	if (result == 0)
@@ -501,8 +497,6 @@ pthread_kill (pthread_t thread, int sig)
 {
 	int result = 0;
 
-	DosEnterCritSec();
-
 	// get data structure
 	pthread_t map = (pthread_t) thread;
 
@@ -512,8 +506,6 @@ pthread_kill (pthread_t thread, int sig)
 	{
 		result = ESRCH;
 	}
-
-	DosExitCritSec();
 
 	if (0 == result && 0 != sig)
 	{

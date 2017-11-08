@@ -40,12 +40,16 @@
 #define INCL_EXAPIS_MAPPINGS
 #include <os2emx.h>
 
+#include <sys/smutex.h>
+
 #include <stdlib.h>
 #include <errno.h>
 
 
 #include "pthread.h"
 #include "pthread_private.h"
+
+static _smutex mutex_init_lock = 0;
 
 int
 pthread_mutex_init(pthread_mutex_t * mutex,
@@ -115,10 +119,10 @@ pthread_mutex_lock(pthread_mutex_t * mutex)
 
 	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
 	if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
-		DosEnterCritSec();
+	  	_smutex_request(&mutex_init_lock);
 		if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
 			pthread_mutex_init( mutex, NULL);
-		DosExitCritSec();
+		_smutex_release(&mutex_init_lock);
 	}
 
 	mx = *mutex;
@@ -139,10 +143,10 @@ pthread_mutex_trylock(pthread_mutex_t * mutex)
 
 	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
 	if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
-		DosEnterCritSec();
+		_smutex_request(&mutex_init_lock);
 		if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
 			pthread_mutex_init( mutex, NULL);
-		DosExitCritSec();
+		_smutex_release(&mutex_init_lock);
 	}
 
 	mx = *mutex;
@@ -171,10 +175,10 @@ pthread_mutex_unlock(pthread_mutex_t * mutex)
 
 	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
 	if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
-		DosEnterCritSec();
+		_smutex_request(&mutex_init_lock);
 		if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
 			pthread_mutex_init( mutex, NULL);
-		DosExitCritSec();
+		_smutex_release(&mutex_init_lock);
 	}
 
 	mx = *mutex;
