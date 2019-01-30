@@ -91,6 +91,7 @@ int pthread_rwlock_init(pthread_rwlock_t *_lock, const pthread_rwlockattr_t *_at
   }
 
   lock->mutex = 0;
+  lock->cond = 0;
   lock->num_active = 0;
   //lock->exclusive_waiters = 0;
   lock->num_shared_waiters = 0;
@@ -98,6 +99,13 @@ int pthread_rwlock_init(pthread_rwlock_t *_lock, const pthread_rwlockattr_t *_at
   
   rc = pthread_mutex_init(&lock->mutex, NULL);
   if (rc != 0) return rc;
+
+  rc = pthread_cond_init(&lock->cond, NULL);
+  if (rc != 0 ) {
+      pthread_mutex_destroy(&lock->mutex);
+
+      return rc;
+  }
 
   //lock->exclusive_waiters = mksem(0);
   //if (lock->exclusive_waiters < 0) return errno;
@@ -114,6 +122,7 @@ int pthread_rwlock_destroy(pthread_rwlock_t *_lock)
 {
   pthread_rwlock_t lock = *_lock;
   if (!lock) return EINVAL;
+  pthread_cond_destroy(&lock->cond);
   pthread_mutex_destroy(&lock->mutex);
   //if (close(lock->exclusive_waiters) < 0) return errno;
   //if (close(lock->shared_waiters) < 0) return errno;
@@ -224,6 +233,8 @@ int pthread_rwlock_timedrdlock(pthread_rwlock_t *_lock, const struct timespec *a
       lock->num_active++;
       break;
     }
+
+    pthread_cond_wait(&lock->cond, &lock->mutex);
   }
 
   pthread_mutex_unlock(&lock->mutex);
@@ -273,6 +284,8 @@ int pthread_rwlock_timedwrlock(pthread_rwlock_t *_lock, const struct timespec *a
     //pthread_mutex_unlock(&lock->mutex);
     //if (waitone(lock->exclusive_waiters, __abstime2timeout(abstime)) < 0) return errno;
     //pthread_mutex_lock(&lock->mutex);
+
+    pthread_cond_wait(&lock->cond, &lock->mutex);
   }
 
   pthread_mutex_unlock(&lock->mutex);
@@ -326,6 +339,7 @@ int pthread_rwlock_unlock(pthread_rwlock_t *_lock)
     }
   }
 
+  pthread_cond_broadcast(&lock->cond);
   pthread_mutex_unlock(&lock->mutex);
   return 0;
 }

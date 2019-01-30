@@ -78,6 +78,7 @@ struct pthread_rwlockattr_t_
 struct pthread_rwlock_t_
 {
   pthread_mutex_t mutex;
+  pthread_cond_t cond;
   //handle_t shared_waiters;
   //handle_t exclusive_waiters;
   int num_shared_waiters;
