@@ -25,10 +25,10 @@
 #define INCL_DOS
 #define INCL_EXAPIS
 #define INCL_EXAPIS_MAPPINGS
+#define _EMX_SOURCE
 #include <os2emx.h>
 
 #include <stdio.h>
-#define __USE_EMX
 #include <stdlib.h>
 #include <stddef.h>
 

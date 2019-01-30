@@ -76,7 +76,7 @@ int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)
 
 int pthread_cond_destroy(pthread_cond_t *cond)
 {
-	APIRET   rc;
+	APIRET   rc = 0;
 	pthread_cond_t cv;
 
 	if (cond == NULL || *cond == NULL)
@@ -106,7 +106,7 @@ int pthread_cond_destroy(pthread_cond_t *cond)
 
 int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 {
-	APIRET	rc;
+	APIRET	rc = 0;
 	int		rval;
 	pthread_cond_t cv;
 
@@ -149,7 +149,7 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 {
 	struct timeb curtime;
 	long timeout;
-	APIRET	rc;
+	APIRET	rc = 0;
 	int		rval;
 	pthread_cond_t cv;
 
@@ -199,7 +199,7 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 
 int pthread_cond_signal(pthread_cond_t *cond)
 {
-	APIRET	rc;
+	APIRET	rc = 0;
 	pthread_cond_t cv;
 
 	if (cond == NULL || *cond == NULL)
@@ -230,8 +230,7 @@ int pthread_cond_signal(pthread_cond_t *cond)
 int pthread_cond_broadcast(pthread_cond_t *cond)
 {
 	int	    i;
-	APIRET	rc;
-	int		rval;
+	APIRET	rc = 0;
 	pthread_cond_t cv;
 
 	if (cond == NULL || *cond == NULL)

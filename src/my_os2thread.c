@@ -3,6 +3,7 @@
 #define INCL_DOSERRORS
 #define INCL_EXAPIS
 #define INCL_EXAPIS_MAPPINGS
+#define _EMX_SOURCE
 #include <os2emx.h>
 
 #include <stdlib.h>
@@ -57,7 +58,6 @@ void __ctordtorTerm(void);
  */
 unsigned long _System _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
 {
-	APIRET rc;
 
 	switch (ulFlag) {
 	case 0:
@@ -543,7 +543,6 @@ pthread_cancel (pthread_t thread)
       */
 {
 	int result;
-	int cancel_self;
 	pthread_t self;
 
 	result = pthread_kill (thread, 0);
