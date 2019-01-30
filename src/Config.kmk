@@ -5,5 +5,15 @@
 # edit this file to change version numbering
 # in bldlevel informations
 #
-VERSION	= 20150408
+VERSION	= 20190130
 BUILD	= os2
+
+# Grab version number
+BUILD_VERSION_BUILD := 0
+
+# Grab build properties suitable for BLDLEVEL
+BUILD_DATE := $(shell LANG=C printf ' %-24.24s ' "`date -u +'%Y-%m-%d %T'`")
+BUILD_HOST := $(shell printf '%-.11s' `echo $$HOSTNAME`)
+
+# Format BLDLEVEL string (excluding the description, may be used as a prefix for it)
+BUILD_BLDLEVEL := @\#bww bitwise works GmbH:$(VERSION)\#@\#\#1\#\#$(BUILD_DATE)$(BUILD_HOST)::::$(BUILD_VERSION_BUILD)::@@
