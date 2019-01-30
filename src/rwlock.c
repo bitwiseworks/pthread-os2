@@ -189,6 +189,8 @@ int pthread_rwlock_trywrlock(pthread_rwlock_t *_lock)
     else
       rc = EBUSY;
   }
+  else
+    rc = EBUSY;
 
   pthread_mutex_unlock(&lock->mutex);
   return rc;
