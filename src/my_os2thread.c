@@ -12,10 +12,6 @@
 #include <types.h>
 #include <sys/builtin.h>
 
-#define INCL_LIBLOADEXCEPTQ
-#define INCL_FORKEXCEPTQ
-#include "exceptq.h"
-
 //#define DEBUG
 
 #include "pthread.h"
@@ -92,15 +88,9 @@ unsigned long _System _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
 */
 static pthread_handler_decl(pthread_start,param)
 {
-	EXCEPTIONREGISTRATIONRECORD exRegRec;
 	pthread_t thread = (pthread_t) param;
 	pthread_handler func = thread->func;
 	void *func_param = thread->param;
-
-	// install exception handler (dynamically loaded)
-	if (LibLoadExceptq(&exRegRec)) {
-		thread->pExRegRec = &exRegRec;
-	}
 
 	// store data structure pointer in thread self memory
 	pthread_setspecific(THR_self, thread);
@@ -177,7 +167,6 @@ void pthread_exit(void *a)
 {
 	// get data structure pointer from thread self memory
 	pthread_t thread = (pthread_t) pthread_getspecific(THR_self);
-	EXCEPTIONREGISTRATIONRECORD* pExRegRec = thread->pExRegRec;
 	
 	// thread has ended, pthread_join is not allowed to wait for thread
 	thread->done = TRUE;
@@ -192,11 +181,6 @@ void pthread_exit(void *a)
 
 	// thread is joinable, pthread_join is supposed to be called from main thread
 
-
-	// remove exception handler
-	if (pExRegRec) {
-		UninstallExceptq(pExRegRec);
-	}
 
 	// let libc terminate this thread
 	_endthread();
