@@ -14,6 +14,10 @@
 
 //#define DEBUG
 
+#ifdef DEBUG
+#include <stdio.h>
+#endif
+
 #include "pthread.h"
 #include "pthread_private.h"
 
@@ -111,6 +115,9 @@ static pthread_handler_decl(pthread_start,param)
 int pthread_create(pthread_t *thread_id, const pthread_attr_t *attr,
 		   pthread_handler func, void *param)
 {
+#ifdef DEBUG
+	fprintf(stderr, "(#%d) pthread_create\n", _gettid());
+#endif
 	pthread_t thread;
 	int stackSize = 0;
 
@@ -158,6 +165,9 @@ int pthread_create(pthread_t *thread_id, const pthread_attr_t *attr,
 		return(error ? error : -1);
 	}
 
+#ifdef DEBUG
+	fprintf(stderr, "(#%d) pthread_create: started thread %lu\n", _gettid(), thread->hThread);
+#endif
 	// ok
 	return(0);
 }
@@ -258,6 +268,9 @@ pthread_self (void)
 */
 int pthread_join( pthread_t thread, void **status)
 {
+#ifdef DEBUG
+	fprintf(stderr, "(#%d) pthread_join\n", _gettid());
+#endif
 	pthread_t self = (pthread_t) pthread_self();
 	// get data structure
 	pthread_t map = (pthread_t) thread;
@@ -273,17 +286,24 @@ int pthread_join( pthread_t thread, void **status)
 
 	// now wait for thread end
 #ifdef DEBUG
-	printf( "(#%d) pthread_join map->done %d, map->hThread %d\n", _gettid(), map->done, map->hThread);
+	fprintf(stderr, "(#%d) pthread_join map->done %lu, map->hThread %lu\n", _gettid(), map->done, map->hThread);
 #endif
 	if (!map->done) {
-		rc = DosWaitThread(&map->hThread, DCWW_WAIT);
+		while (1) {
+			rc = DosWaitThread(&map->hThread, DCWW_WAIT);
 #ifdef DEBUG
-	printf( "DosWaitThread rc %d, map->hThread %d\n", rc, map->hThread);
+			fprintf(stderr, "DosWaitThread rc %lu, map->hThread %lu\n", rc, map->hThread);
 #endif
-		if (rc == ERROR_INVALID_THREADID)
-			return ESRCH;
-		if (rc != NO_ERROR)
-			return EINVAL;
+			// make sure to go on with waiting if we've been interrupted (e.g.
+			// (by DosKillThread in LIBC which delivers Posix signals this way)
+			if (rc == ERROR_INTERRUPT)
+				continue;
+			if (rc == ERROR_INVALID_THREADID)
+				return ESRCH;
+			if (rc != NO_ERROR)
+				return EINVAL;
+			break;
+		}
 	}
 
 	// thread ended, get value
