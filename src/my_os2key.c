@@ -23,20 +23,68 @@
 #define INCL_EXAPIS_MAPPINGS
 #include <os2emx.h>
 
+#include <stdlib.h>
+
 #include "pthread.h"
 #include "tls.h"
 
+struct pthread_key_pair_t_
+{
+    pthread_key_t key;
+    void (*destructor)(void*);
+    struct pthread_key_pair_t_ *next;
+};
+
+typedef struct pthread_key_pair_t_ * pthread_key_pair_t;
+
+static pthread_key_pair_t pair_start = NULL;
+
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
 {
+    pthread_key_pair_t new_pair;
+
+    new_pair = calloc(1, sizeof(*new_pair));
+    if (new_pair == NULL) {
+        errno = ENOMEM;
+        return -1;
+    }
 
     if ((*(ULONG *)key = TlsAlloc()) != -1)
+    {
+        new_pair->key = *key;
+        new_pair->destructor = destructor;
+        new_pair->next = pair_start;
+
+        pair_start = new_pair;
+
         return 0;
+    }
+
+    free(new_pair);
+
     errno = EAGAIN;
     return -1;
 }
 
 int pthread_key_delete(pthread_key_t key)
 {
+    pthread_key_pair_t prev = NULL;
+    pthread_key_pair_t pair;
+
+    for (pair = pair_start; pair != NULL; pair = pair->next) {
+        if (pair->key == key) {
+            if (pair == pair_start)
+                pair_start = pair->next;
+            else
+                prev->next = pair->next;
+
+            free(pair);
+            break;
+        }
+
+        prev = pair;
+    }
+
     if (TlsFree((ULONG)key))
         return 0;
     errno = EINVAL;
@@ -56,3 +104,16 @@ int pthread_setspecific(pthread_key_t key, const void *value)
     return -1;
 }
 
+void pthread_key_destructor(void)
+{
+    pthread_key_pair_t pair;
+
+    for (pair = pair_start; pair != NULL; pair = pair->next) {
+        void *value = pthread_getspecific(pair->key);
+
+        if (value != NULL && pair->destructor != NULL) {
+            pthread_setspecific(pair->key, NULL);
+            pair->destructor(value);
+        }
+    }
+}

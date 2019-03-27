@@ -86,6 +86,8 @@ struct pthread_rwlock_t_
   pthread_t owner;
 };
 
+void pthread_key_destructor(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

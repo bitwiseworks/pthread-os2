@@ -189,6 +189,9 @@ void pthread_exit(void *a)
 		pthread_setspecific(THR_self, NULL);
 	}
 
+	// call all available destructors associated with all keys
+	pthread_key_destructor();
+
 	// thread is joinable, pthread_join is supposed to be called from main thread
 
 
