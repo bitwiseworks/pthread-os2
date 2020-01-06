@@ -1,0 +1,8 @@
+out/*
+
+# ignore qt creator files, as not relevant for the repo
+pthread.config
+pthread.creator
+pthread.creator.user
+pthread.files
+pthread.includes
