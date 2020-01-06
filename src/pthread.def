@@ -62,3 +62,4 @@ _pthread_rwlock_tryrdlock
 _pthread_rwlock_rdlock
 _pthread_rwlock_trywrlock
 _pthread_rwlock_wrlock
+_pthread_sigmask

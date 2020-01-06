@@ -20,6 +20,7 @@ LIBRARIES = pthread_s pthread_g pthread_dll
 
 pthread_s_SOURCES = \
 	pthread_attr.c \
+	pthread_sigmask.c \
 	rwlock.c \
 	my_os2cond.c \
 	my_os2mutex.c \

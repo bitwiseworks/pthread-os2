@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <time.h>
+#include <signal.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,7 +92,7 @@ void  pthread_setprio( int, int);
 int pthread_detach (pthread_t thread);
 int pthread_kill (pthread_t thread, int sig);
 
-#define pthread_sigmask(A,B,C) sigprocmask((A),(B),(C))
+int pthread_sigmask(int, const sigset_t *, sigset_t *);
 
 /*
  * PThread Attribute Functions
