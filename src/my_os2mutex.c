@@ -59,18 +59,16 @@ pthread_mutex_init(pthread_mutex_t * mutex,
 	pthread_mutex_t mx;
 
 	if (mutex == NULL)
-	{
 		return EINVAL;
-	}
 
 	mx = (pthread_mutex_t) calloc (1, sizeof (*mx));
 	
 	if (mx == NULL)
-	{
 		return ENOMEM;
-	}
 
 	rc = DosCreateMutexSem( NULL,(PHMTX)&mx->sem,0,0);
+	if (rc)
+		return ENOMEM;
 
 	*mutex = mx;
 
@@ -184,6 +182,8 @@ pthread_mutex_unlock(pthread_mutex_t * mutex)
 	mx = *mutex;
 
 	rc = DosReleaseMutexSem(mx->sem);
+	if (rc)
+		return EINVAL;
 
 	/* Return the completion status: */
 	return (0);

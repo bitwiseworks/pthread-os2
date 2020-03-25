@@ -23,6 +23,7 @@
 *****************************************************************************/
 
 #define INCL_DOS
+#define INCL_DOSERRORS
 #define INCL_EXAPIS
 #define INCL_EXAPIS_MAPPINGS
 #include <os2emx.h>
@@ -222,6 +223,8 @@ int pthread_cond_signal(pthread_cond_t *cond)
 #ifdef DEBUG
 	printf( "(#%d) pthread_cond_signal rc %d\n", _gettid(), rc);
 #endif
+	if (rc)
+		return EINVAL;
 
 	return 0;
 }
@@ -254,6 +257,9 @@ int pthread_cond_broadcast(pthread_cond_t *cond)
 #endif
 	
 	while (i--) rc = DosPostEventSem(cv->semaphore);
-	
+
+	if (rc && rc != ERROR_ALREADY_POSTED)
+		return EINVAL;
+
 	return 0 ;
 }
