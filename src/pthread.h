@@ -1,4 +1,3 @@
-
 #ifndef __PTHREAD_H__
 #define __PTHREAD_H__
 
@@ -21,7 +20,7 @@ enum {
 typedef struct pthread_t_ * pthread_t;
 typedef struct pthread_attr_t_ * pthread_attr_t;
 typedef struct pthread_once_t_ pthread_once_t;
-typedef struct pthread_key_t_ * pthread_key_t;
+typedef int pthread_key_t; /* be compatible with BSD */
 typedef struct pthread_mutex_t_ * pthread_mutex_t;
 typedef struct pthread_mutexattr_t_ * pthread_mutexattr_t;
 typedef struct pthread_cond_t_ * pthread_cond_t;
