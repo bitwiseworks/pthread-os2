@@ -1,4 +1,3 @@
- 
 #define INCL_DOS
 #define INCL_DOSERRORS
 #define INCL_EXAPIS
@@ -190,7 +189,7 @@ void pthread_exit(void *a)
 	}
 
 	// call all available destructors associated with all keys
-	pthread_key_destructor();
+	TlsThreadDestructor();
 
 	// thread is joinable, pthread_join is supposed to be called from main thread
 

@@ -156,6 +156,12 @@ enum {
   PTHREAD_PROCESS_SHARED        = 1,
 
 /*
+ * pthread_key constants
+ */
+  PTHREAD_DESTRUCTOR_ITERATIONS = 4,
+  PTHREAD_KEYS_MAX              = 64,
+
+/*
  * pthread_barrier_wait
  */
   PTHREAD_BARRIER_SERIAL_THREAD = -1

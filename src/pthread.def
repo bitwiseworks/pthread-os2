@@ -49,6 +49,7 @@ EXPORTS
   "_TlsGetValue"                                                        ; magicseg='TEXT32' len=12
   "_TlsFree"                                                            ; magicseg='TEXT32' len=8
   "_TlsAlloc"                                                           ; magicseg='TEXT32' len=9
+  "_TlsAllocEx"                                                         ; magicseg='TEXT32' len=11
 
 _pthread_mutexattr_init
 _pthread_mutexattr_settype

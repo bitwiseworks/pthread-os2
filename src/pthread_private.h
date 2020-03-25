@@ -1,4 +1,3 @@
-
 #ifndef __PTHREAD_PRIVATE_H__
 #define __PTHREAD_PRIVATE_H__
 
@@ -86,7 +85,7 @@ struct pthread_rwlock_t_
   pthread_t owner;
 };
 
-void pthread_key_destructor(void);
+void TlsThreadDestructor(void);
 
 #ifdef __cplusplus
 } // extern "C"

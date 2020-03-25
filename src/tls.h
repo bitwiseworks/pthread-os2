@@ -7,12 +7,13 @@
 extern "C" {
 #endif
 
-ULONG    TlsAlloc( void);
-BOOL     TlsFree( ULONG);
-PVOID	 TlsGetValue( ULONG);
-BOOL     TlsSetValue( ULONG, PVOID);
-void     TlsAllocThreadLocalMemory( void);
-void     TlsFreeThreadLocalMemory( void);
+ULONG    TlsAlloc(void);
+ULONG    TlsAllocEx(void (*)(void*));
+BOOL     TlsFree(ULONG);
+PVOID    TlsGetValue(ULONG);
+BOOL     TlsSetValue(ULONG, PVOID);
+void     TlsAllocThreadLocalMemory(void);
+void     TlsFreeThreadLocalMemory(void);
 
 #ifdef __cplusplus
 }
