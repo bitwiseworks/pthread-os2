@@ -223,7 +223,7 @@ int pthread_cond_signal(pthread_cond_t *cond)
 #ifdef DEBUG
 	printf( "(#%d) pthread_cond_signal rc %d\n", _gettid(), rc);
 #endif
-	if (rc)
+	if (rc && rc != ERROR_ALREADY_POSTED)
 		return EINVAL;
 
 	return 0;
