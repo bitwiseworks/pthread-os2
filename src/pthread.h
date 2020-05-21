@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <time.h>
 #include <signal.h>
+#include <sys/param.h> /* for PAGE_SIZE */
 
 #ifdef __cplusplus
 extern "C" {
@@ -129,6 +130,11 @@ enum {
  */
   PTHREAD_INHERIT_SCHED         = 0,
   PTHREAD_EXPLICIT_SCHED        = 1,  /* Default */
+
+/*
+ * pthread_attr_setstacksize
+ */
+  PTHREAD_STACK_MIN             = PAGE_SIZE,
 
 /*
  * pthread_{get,set}scope

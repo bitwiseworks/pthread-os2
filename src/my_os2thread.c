@@ -141,8 +141,9 @@ int pthread_create(pthread_t *thread_id, const pthread_attr_t *attr,
 
 	if (attr != NULL)
 		stackSize = (*attr)->dwStackSize;
-	stackSize = (stackSize > PTHREAD_STACK_DEFAULT 
-				 ? stackSize : PTHREAD_STACK_DEFAULT);
+	stackSize = (stackSize == 0 ? PTHREAD_STACK_DEFAULT :
+                 stackSize > PTHREAD_STACK_MIN 
+				 ? stackSize : PTHREAD_STACK_MIN);
 
 	thread->hThread=(ULONG)_beginthread((void( *)(void *)) pthread_start, NULL,
 										stackSize, (void*) thread);
