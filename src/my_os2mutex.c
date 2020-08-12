@@ -87,7 +87,10 @@ pthread_mutex_destroy(pthread_mutex_t * mutex)
 		return EINVAL;
 
 	/* already destroyed or not initialized ? */
-	if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
+    // Note that we also check for NULL as on *nix pthread_mutex_t is a struct
+    // and some apps don't use PTHREAD_MUTEX_INITIALIZER assuming that the struct
+    // located in a global data segment is initialized to zeroes by the compiler.
+	if (!*mutex || *mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
 		return (0);
 
 	mx = *mutex;
@@ -116,9 +119,12 @@ pthread_mutex_lock(pthread_mutex_t * mutex)
 	pthread_mutex_t mx;
 
 	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-	if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
+    // Note that we also check for NULL as on *nix pthread_mutex_t is a struct
+    // and some apps don't use PTHREAD_MUTEX_INITIALIZER assuming that the struct
+    // located in a global data segment is initialized to zeroes by the compiler.
+	if (!*mutex || *mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
 	  	_smutex_request(&mutex_init_lock);
-		if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
+		if (!*mutex || *mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
 			pthread_mutex_init( mutex, NULL);
 		_smutex_release(&mutex_init_lock);
 	}
@@ -140,9 +146,12 @@ pthread_mutex_trylock(pthread_mutex_t * mutex)
 	pthread_mutex_t mx;
 
 	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-	if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
+    // Note that we also check for NULL as on *nix pthread_mutex_t is a struct
+    // and some apps don't use PTHREAD_MUTEX_INITIALIZER assuming that the struct
+    // located in a global data segment is initialized to zeroes by the compiler.
+	if (!*mutex || *mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
 		_smutex_request(&mutex_init_lock);
-		if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
+		if (!*mutex || *mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
 			pthread_mutex_init( mutex, NULL);
 		_smutex_release(&mutex_init_lock);
 	}
@@ -172,9 +181,12 @@ pthread_mutex_unlock(pthread_mutex_t * mutex)
 	pthread_mutex_t mx;
 
 	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-	if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
+    // Note that we also check for NULL as on *nix pthread_mutex_t is a struct
+    // and some apps don't use PTHREAD_MUTEX_INITIALIZER assuming that the struct
+    // located in a global data segment is initialized to zeroes by the compiler.
+	if (!*mutex || *mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
 		_smutex_request(&mutex_init_lock);
-		if (*mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
+		if (!*mutex || *mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
 			pthread_mutex_init( mutex, NULL);
 		_smutex_release(&mutex_init_lock);
 	}
