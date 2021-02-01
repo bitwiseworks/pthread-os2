@@ -32,6 +32,7 @@
 #include <process.h>
 #include <strings.h>
 #include <sys/timeb.h>
+#include <InnoTekLIBC/errno.h>
 
 //#define DEBUG
 
@@ -62,7 +63,7 @@ int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)
 	rc = DosCreateEventSem( NULL, (PHEV)&cv->semaphore, 0x0800, 0);
 	if (rc) {
 		free( cv);
-		return ENOMEM;
+		return __libc_native2errno(rc);
 	}
 
 	cv->waiting=0;
@@ -93,13 +94,13 @@ int pthread_cond_destroy(pthread_cond_t *cond)
 
 	do {
 		rc = DosCloseEventSem(cv->semaphore);
-		if (rc == 301) DosPostEventSem(cv->semaphore);
-	} while (rc == 301);
+		if (rc == ERROR_SEM_BUSY) DosPostEventSem(cv->semaphore);
+	} while (rc == ERROR_SEM_BUSY);
 
 	(void) free (cv);
 
 	if (rc)
-		return EINVAL;
+		return __libc_native2errno(rc);
 
 	return 0;
 }
@@ -131,9 +132,9 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 
 	if (mutex) pthread_mutex_unlock(mutex);
 
-	rc = DosWaitEventSem(cv->semaphore,SEM_INDEFINITE_WAIT);
+	DOS_NI(rc = DosWaitEventSem(cv->semaphore,SEM_INDEFINITE_WAIT));
 	if (rc != 0)
-		rval = EINVAL;
+		rval = __libc_native2errno(rc);
 
 	if (mutex) pthread_mutex_lock(mutex);
 
@@ -183,12 +184,12 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 #ifdef DEBUG
 	printf( "(#%d) pthread_cond_timedwait waiting timeout %d\n", _gettid(), timeout);
 #endif
-	rc = DosWaitEventSem(cv->semaphore, timeout);
+	DOS_NI(rc = DosWaitEventSem(cv->semaphore, timeout));
 #ifdef DEBUG
 	printf( "(#%d) pthread_cond_timedwait waiting rc %d\n", _gettid(), rc);
 #endif
 	if (rc != 0)
-		rval = ETIMEDOUT;
+		rval = __libc_native2errno(rc);
 
 	if (mutex) pthread_mutex_lock(mutex);
 
@@ -207,7 +208,7 @@ int pthread_cond_signal(pthread_cond_t *cond)
 	{
 		return EINVAL;
 	}
-	
+
 	// initialize static semaphores created with PTHREAD_COND_INITIALIZER state.
 	if (*cond == PTHREAD_COND_INITIALIZER)
 		pthread_cond_init( cond, NULL);
@@ -224,7 +225,7 @@ int pthread_cond_signal(pthread_cond_t *cond)
 	printf( "(#%d) pthread_cond_signal rc %d\n", _gettid(), rc);
 #endif
 	if (rc && rc != ERROR_ALREADY_POSTED)
-		return EINVAL;
+		return __libc_native2errno(rc);
 
 	return 0;
 }
@@ -255,11 +256,11 @@ int pthread_cond_broadcast(pthread_cond_t *cond)
 #ifdef DEBUG
 	printf( "pthread_cond_broadcast cond->semaphore %x, cond->waiting %d\n", cv->semaphore, cv->waiting);
 #endif
-	
+
 	while (i--) rc = DosPostEventSem(cv->semaphore);
 
 	if (rc && rc != ERROR_ALREADY_POSTED)
-		return EINVAL;
+		return __libc_native2errno(rc);
 
 	return 0 ;
 }

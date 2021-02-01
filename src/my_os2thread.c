@@ -10,6 +10,7 @@
 #include <process.h>
 #include <types.h>
 #include <sys/builtin.h>
+#include <InnoTekLIBC/errno.h>
 
 //#define DEBUG
 
@@ -39,7 +40,7 @@ int _pthreadInit(void)
 	if (THR_self == (pthread_key_t)-1)
 		if (pthread_key_create(&THR_self,NULL)==-1)
 			return -1; // fail
-			
+
 	return 0;
 }
 
@@ -64,7 +65,7 @@ unsigned long _System _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
 		if (_CRT_init() != 0)
 		return 0UL;
 		__ctordtorInit();
-		
+
 		// init
 		_pthreadInit();
 		break;
@@ -114,9 +115,6 @@ static pthread_handler_decl(pthread_start,param)
 int pthread_create(pthread_t *thread_id, const pthread_attr_t *attr,
 		   pthread_handler func, void *param)
 {
-#ifdef DEBUG
-	fprintf(stderr, "(#%d) pthread_create\n", _gettid());
-#endif
 	pthread_t thread;
 	int stackSize = 0;
 
@@ -126,7 +124,7 @@ int pthread_create(pthread_t *thread_id, const pthread_attr_t *attr,
 	// allocate thread private data structure
 	thread = (pthread_t)calloc(1,sizeof(*thread));
 	if (!thread)
-		return(-1);
+		return(ENOMEM);
 
 	thread->func=func;
 	thread->param=param;
@@ -142,18 +140,24 @@ int pthread_create(pthread_t *thread_id, const pthread_attr_t *attr,
 	if (attr != NULL)
 		stackSize = (*attr)->dwStackSize;
 	stackSize = (stackSize == 0 ? PTHREAD_STACK_DEFAULT :
-                 stackSize > PTHREAD_STACK_MIN 
+                 stackSize > PTHREAD_STACK_MIN
 				 ? stackSize : PTHREAD_STACK_MIN);
 
 	thread->hThread=(ULONG)_beginthread((void( *)(void *)) pthread_start, NULL,
 										stackSize, (void*) thread);
+#ifdef DEBUG
+	if (thread->hThread == -1)
+		fprintf(stderr, "(#%d) pthread_create: _beginthread failed, errno %d\n", _gettid(), errno);
+#endif
 
-	// return pointer to caller
-	*thread_id = thread;
+	if (thread->hThread != (ULONG) -1) {
+		// return pointer to caller
+		*thread_id = thread;
 
-	// set thread priority
-	if (attr != NULL) {
-		pthread_setprio(thread->hThread, (*attr)->priority);
+		// set thread priority
+		if (attr != NULL) {
+			pthread_setprio(thread->hThread, (*attr)->priority);
+		}
 	}
 
 	// data initialized, allow thread to run
@@ -162,7 +166,7 @@ int pthread_create(pthread_t *thread_id, const pthread_attr_t *attr,
 	if (thread->hThread == (ULONG) -1) {
 		int error=errno;
 		free(thread);
-		return(error ? error : -1);
+		return(error ? error : EINVAL);
 	}
 
 #ifdef DEBUG
@@ -177,11 +181,11 @@ void pthread_exit(void *a)
 {
 	// get data structure pointer from thread self memory
 	pthread_t thread = (pthread_t) pthread_getspecific(THR_self);
-	
+
 	// thread has ended, pthread_join is not allowed to wait for thread
 	thread->done = TRUE;
 	thread->rc = a;
-	
+
 	// free resources for detached threads
 	if (thread->detachState == PTHREAD_CREATE_DETACHED) {
 		// free resources
@@ -206,7 +210,7 @@ int pthread_equal(pthread_t t1,pthread_t t2)
 
 void pthread_setprio( int a, int b)
 {
-	DosSetPriority(PRTYS_THREAD,PRTYC_NOCHANGE, b, a);   
+	DosSetPriority(PRTYS_THREAD,PRTYC_NOCHANGE, b, a);
 }
 
 int pthread_dummy(int ret)
@@ -240,7 +244,7 @@ pthread_self (void)
 
 	if (THR_LOCK_thread >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
 		_pthreadInit();
-	
+
 	thread = (pthread_t) pthread_getspecific(THR_self);
 	if (thread == NULL)
 	{
@@ -262,11 +266,11 @@ pthread_self (void)
 			pthread_setspecific(THR_self, thread);
 		}
 	}
-	
+
 	return (thread);
 } /* pthread_self */
 
-/* 
+/*
  * pthread_join - Causes the calling thread to wait for the termination of a specified thread
 */
 int pthread_join( pthread_t thread, void **status)
@@ -280,7 +284,7 @@ int pthread_join( pthread_t thread, void **status)
 	APIRET rc;
 
 	// not valid for same thread
-	if (self == thread) 
+	if (self == thread)
 		return EDEADLK;
 
 	// not valid for detached thread
@@ -293,19 +297,12 @@ int pthread_join( pthread_t thread, void **status)
 #endif
 	if (!map->done) {
 		while (1) {
-			rc = DosWaitThread(&map->hThread, DCWW_WAIT);
+			DOS_NI(rc = DosWaitThread(&map->hThread, DCWW_WAIT));
 #ifdef DEBUG
 			fprintf(stderr, "DosWaitThread rc %lu, map->hThread %lu\n", rc, map->hThread);
 #endif
-			// make sure to go on with waiting if we've been interrupted (e.g.
-			// (by DosKillThread in LIBC which delivers Posix signals this way)
-			if (rc == ERROR_INTERRUPT)
-				continue;
-			if (rc == ERROR_INVALID_THREADID)
-				return ESRCH;
-			if (rc != NO_ERROR)
-				return EINVAL;
-			break;
+			if (rc)
+				return __libc_native2errno(rc);
 		}
 	}
 
@@ -337,13 +334,13 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
 	if (__atomic_cmpxchg32((unsigned*)&once_control->done, 0, 0)) /* MBR fence */
 	{
 		pthread_mutex_lock(&once_control->lock);
-		
+
 		if (!once_control->done)
 		{
 			(*init_routine)();
 			once_control->done = PTW32_TRUE;
 		}
-		
+
 		pthread_mutex_unlock(&once_control->lock);
 	}
 
@@ -410,7 +407,7 @@ pthread_detach (pthread_t thread)
 #if 0
 	BOOL destroyIt = PTW32_FALSE;
 #endif
-	
+
 	if (NULL == map)
 	{
 		result = ESRCH;
@@ -427,7 +424,7 @@ pthread_detach (pthread_t thread)
 		* but all of the state and locks etc are still there.
 		*/
 		result = 0;
-		
+
 		if (pthread_mutex_lock (&map->cancelLock) == 0)
 		{
 			map->detachState = PTHREAD_CREATE_DETACHED;
@@ -457,7 +454,7 @@ pthread_detach (pthread_t thread)
 	if (result == 0)
 	{
 		/* Thread is joinable */
-		
+
 		if (destroyIt)
 		{
 			/* The thread has exited or is exiting but has not been joined or
@@ -468,7 +465,7 @@ pthread_detach (pthread_t thread)
 		}
 	}
 #endif
-	
+
 	return (result);
 }				/* pthread_detach */
 

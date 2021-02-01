@@ -44,6 +44,7 @@
 
 #include <stdlib.h>
 #include <errno.h>
+#include <InnoTekLIBC/errno.h>
 
 
 #include "pthread.h"
@@ -62,13 +63,13 @@ pthread_mutex_init(pthread_mutex_t * mutex,
 		return EINVAL;
 
 	mx = (pthread_mutex_t) calloc (1, sizeof (*mx));
-	
+
 	if (mx == NULL)
 		return ENOMEM;
 
 	rc = DosCreateMutexSem( NULL,(PHMTX)&mx->sem,0,0);
 	if (rc)
-		return ENOMEM;
+		return __libc_native2errno(rc);
 
 	*mutex = mx;
 
@@ -130,11 +131,11 @@ pthread_mutex_lock(pthread_mutex_t * mutex)
 	}
 
 	mx = *mutex;
-	
-	rc = DosRequestMutexSem(mx->sem,SEM_INDEFINITE_WAIT);
+
+	DOS_NI(rc = DosRequestMutexSem(mx->sem,SEM_INDEFINITE_WAIT));
 	if (rc)
-		return(EINVAL);
-	
+		return(__libc_native2errno(rc));
+
 	/* Return the completion status: */
 	return (0);
 }
@@ -158,17 +159,9 @@ pthread_mutex_trylock(pthread_mutex_t * mutex)
 
 	mx = *mutex;
 
-	rc = DosRequestMutexSem(mx->sem,SEM_IMMEDIATE_RETURN);
-	if (rc) {
-		switch(rc) {
-		case ERROR_INVALID_HANDLE :
-			return(EFAULT);
-		case ERROR_TIMEOUT:
-			return(EBUSY);
-		default:
-			return(EINVAL);
-		}
-	}
+	DOS_NI(rc = DosRequestMutexSem(mx->sem,SEM_IMMEDIATE_RETURN));
+	if (rc)
+		return __libc_native2errno(rc);
 
 	/* Return the completion status: */
 	return (0);
@@ -195,7 +188,7 @@ pthread_mutex_unlock(pthread_mutex_t * mutex)
 
 	rc = DosReleaseMutexSem(mx->sem);
 	if (rc)
-		return EINVAL;
+		return __libc_native2errno(rc);
 
 	/* Return the completion status: */
 	return (0);
@@ -324,7 +317,7 @@ pthread_mutexattr_settype (pthread_mutexattr_t * attr, int kind)
       * get the mutex type  attribute. This attribute is set in  the
       * type  parameter to these functions. The default value of the
       * type  attribute is  PTHREAD_MUTEX_DEFAULT.
-      * 
+      *
       * The type of mutex is contained in the type  attribute of the
       * mutex attributes. Valid mutex types include:
       *
@@ -336,7 +329,7 @@ pthread_mutexattr_settype (pthread_mutexattr_t * attr, int kind)
       *          results  in  undefined  behavior.  Attempting   to
       *          unlock  an  unlocked  mutex  results  in undefined
       *          behavior.
-      * 
+      *
       * PTHREAD_MUTEX_ERRORCHECK
       *          This type of  mutex  provides  error  checking.  A
       *          thread  attempting  to  relock  this mutex without
@@ -348,7 +341,7 @@ pthread_mutexattr_settype (pthread_mutexattr_t * attr, int kind)
       *
       * PTHREAD_MUTEX_DEFAULT
       *          Same as PTHREAD_MUTEX_NORMAL.
-      * 
+      *
       * PTHREAD_MUTEX_RECURSIVE
       *          A thread attempting to relock this  mutex  without
       *          first  unlocking  it  will  succeed in locking the

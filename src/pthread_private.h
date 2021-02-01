@@ -11,6 +11,13 @@ extern "C" {
  * Miscellaneous definitions.
  */
 
+// Suppresses the ERROR_INTERRUPT return value in Dos API calls by retrying the
+// operation as long as this code is returned. This is primarily intended to
+// avoid unnecessary interrupts of system calls that may happen during POSIX
+// signal delivery (e.g. SIGCHLD). Note that the macro cannot be used in
+// assignment expressions so call it with the whole assignment as an argument.
+#define DOS_NI(expr) while((expr) == ERROR_INTERRUPT)
+
 // set min stack size to 2MB as in pthread_create specs
 #define PTHREAD_STACK_DEFAULT                   (2*1024*1024)
 
@@ -32,7 +39,7 @@ struct pthread_attr_t_ {
     int         	detachstate;
 };
 
-struct pthread_condattr_t_ { 
+struct pthread_condattr_t_ {
 	int 			dummy;
 };
 
