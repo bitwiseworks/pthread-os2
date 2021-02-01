@@ -17,7 +17,7 @@
 /*****************************************************************************
 ** Pthread local thread storage functions
 *****************************************************************************/
- 
+
 #define INCL_DOS
 #define INCL_EXAPIS
 #define INCL_EXAPIS_MAPPINGS
@@ -32,17 +32,14 @@ int pthread_key_create(pthread_key_t *key, void (*destructor)(void*))
 {
     if ((*(ULONG *)key = TlsAllocEx(destructor)) != -1)
         return 0;
-
-    errno = EAGAIN;
-    return -1;
+    return EAGAIN;
 }
 
 int pthread_key_delete(pthread_key_t key)
 {
     if (TlsFree((ULONG)key))
         return 0;
-    errno = EINVAL;
-    return -1;
+    return EINVAL;
 }
 
 void *pthread_getspecific(pthread_key_t key)
@@ -54,6 +51,5 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 {
     if (TlsSetValue((ULONG)key, (PVOID)value))
         return 0;
-    errno = EINVAL;
-    return -1;
+    return EINVAL;
 }
