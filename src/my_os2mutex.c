@@ -133,7 +133,12 @@ pthread_mutex_lock(pthread_mutex_t * mutex)
 	mx = *mutex;
 
 	DOS_NI(rc = DosRequestMutexSem(mx->sem,SEM_INDEFINITE_WAIT));
-	if (rc)
+	if (rc) {
+		// SEM_IMMEDIATE_RETURN causes ERROR_TIMEOUT if the mutex is already locked
+		// and this code is translated to ETIMEDOUT by __libc_native2errno but Posix
+		// says this func should return EBUSY (and some apps check that).
+		if (rc == ERROR_TIMEOUT)
+			return EBUSY;
 		return(__libc_native2errno(rc));
 
 	/* Return the completion status: */
@@ -160,7 +165,12 @@ pthread_mutex_trylock(pthread_mutex_t * mutex)
 	mx = *mutex;
 
 	DOS_NI(rc = DosRequestMutexSem(mx->sem,SEM_IMMEDIATE_RETURN));
-	if (rc)
+	if (rc) {
+		// SEM_IMMEDIATE_RETURN causes ERROR_TIMEOUT if the mutex is already locked
+		// and this code is translated to ETIMEDOUT by __libc_native2errno but Posix
+		// says this func should return EBUSY (and some apps check that).
+		if (rc == ERROR_TIMEOUT)
+			return EBUSY;
 		return __libc_native2errno(rc);
 
 	/* Return the completion status: */
