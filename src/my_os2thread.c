@@ -296,14 +296,12 @@ int pthread_join( pthread_t thread, void **status)
 	fprintf(stderr, "(#%d) pthread_join map->done %lu, map->hThread %lu\n", _gettid(), map->done, map->hThread);
 #endif
 	if (!map->done) {
-		while (1) {
-			DOS_NI(rc = DosWaitThread(&map->hThread, DCWW_WAIT));
+		DOS_NI(rc = DosWaitThread(&map->hThread, DCWW_WAIT));
 #ifdef DEBUG
-			fprintf(stderr, "DosWaitThread rc %lu, map->hThread %lu\n", rc, map->hThread);
+		fprintf(stderr, "DosWaitThread rc %lu, map->hThread %lu\n", rc, map->hThread);
 #endif
-			if (rc)
-				return __libc_native2errno(rc);
-		}
+		if (rc)
+			return __libc_native2errno(rc);
 	}
 
 	// thread ended, get value
