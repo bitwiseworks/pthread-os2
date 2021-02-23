@@ -56,7 +56,9 @@ int
 pthread_mutex_init(pthread_mutex_t * mutex,
 		   const pthread_mutexattr_t * mutex_attr)
 {
+#if !defined(USE_FMUTEX)
 	APIRET		rc = 0;
+#endif
 	pthread_mutex_t mx;
 
 	if (mutex == NULL)
@@ -67,9 +69,23 @@ pthread_mutex_init(pthread_mutex_t * mutex,
 	if (mx == NULL)
 		return ENOMEM;
 
+	mx->recursive_count = 0;
+
+	if (!mutex_attr || !*mutex_attr) {
+		mx->kind = PTHREAD_MUTEX_DEFAULT;
+	} else {
+		/* TODO: Implement PTHREAD_MUTEX_ERRORCHECK via checked _fmutex */
+		mx->kind = (*mutex_attr)->kind;
+	}
+
+#if defined(USE_FMUTEX)
+	/* Postpone OS/2 sync primitive creation till it's really needed */
+	mx->fmutex = (_fmutex)_FMUTEX_INITIALIZER_EX(0, "pthread_mutex_t");
+#else
 	rc = DosCreateMutexSem( NULL,(PHMTX)&mx->sem,0,0);
 	if (rc)
 		return __libc_native2errno(rc);
+#endif
 
 	*mutex = mx;
 
@@ -80,22 +96,29 @@ pthread_mutex_init(pthread_mutex_t * mutex,
 int
 pthread_mutex_destroy(pthread_mutex_t * mutex)
 {
+#if !defined(USE_FMUTEX)
 	APIRET		rc = 0;
+#endif
 	pthread_mutex_t mx;
 
 	/* check NULL */
-	if (!mutex || !*mutex)
+	if (!mutex)
 		return EINVAL;
 
 	/* already destroyed or not initialized ? */
-    // Note that we also check for NULL as on *nix pthread_mutex_t is a struct
-    // and some apps don't use PTHREAD_MUTEX_INITIALIZER assuming that the struct
-    // located in a global data segment is initialized to zeroes by the compiler.
+	// Note that we also check for NULL as on *nix pthread_mutex_t is a struct
+	// and some apps don't use PTHREAD_MUTEX_INITIALIZER assuming that the struct
+	// located in a global data segment is initialized to zeroes by the compiler.
 	if (!*mutex || *mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
 		return (0);
 
 	mx = *mutex;
 
+#if defined(USE_FMUTEX)
+	// This may fail if fmutex was not yet initialized via lock etc, so ignore
+	// the return value.
+	_fmutex_close(&mx->fmutex);
+#else
 	do {
 		rc = DosCloseMutexSem(mx->sem);
 		if (rc == ERROR_SEM_BUSY) {
@@ -104,6 +127,7 @@ pthread_mutex_destroy(pthread_mutex_t * mutex)
 				return EBUSY;
 		}
 	} while (rc == ERROR_SEM_BUSY);
+#endif
 
 	free (mx);
 	*mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -119,26 +143,43 @@ pthread_mutex_lock(pthread_mutex_t * mutex)
 	APIRET		rc = 0;
 	pthread_mutex_t mx;
 
+	/* check NULL */
+	if (!mutex)
+		return EINVAL;
+
 	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-    // Note that we also check for NULL as on *nix pthread_mutex_t is a struct
-    // and some apps don't use PTHREAD_MUTEX_INITIALIZER assuming that the struct
-    // located in a global data segment is initialized to zeroes by the compiler.
+	// Note that we also check for NULL as on *nix pthread_mutex_t is a struct
+	// and some apps don't use PTHREAD_MUTEX_INITIALIZER assuming that the struct
+	// located in a global data segment is initialized to zeroes by the compiler.
 	if (!*mutex || *mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
-	  	_smutex_request(&mutex_init_lock);
+		int rc2 = 0;
+		_smutex_request(&mutex_init_lock);
 		if (!*mutex || *mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
-			pthread_mutex_init( mutex, NULL);
+			rc2 = pthread_mutex_init( mutex, NULL);
 		_smutex_release(&mutex_init_lock);
+		if (rc2)
+			return rc2;
 	}
 
 	mx = *mutex;
 
+#if defined(USE_FMUTEX)
+	if (mx->kind == PTHREAD_MUTEX_RECURSIVE && _fmutex_is_owner(&mx->fmutex)) {
+		mx->recursive_count++;
+		if (mx->recursive_count == 0)
+			abort();
+	} else {
+		rc = _fmutex_request(&mx->fmutex, _FMR_IGNINT);
+		if (mx->kind == PTHREAD_MUTEX_RECURSIVE && rc == 0) {
+			if (mx->recursive_count)
+				abort();
+			mx->recursive_count = 1;
+		}
+	}
+#else
 	DOS_NI(rc = DosRequestMutexSem(mx->sem,SEM_INDEFINITE_WAIT));
-	if (rc) {
-		// SEM_IMMEDIATE_RETURN causes ERROR_TIMEOUT if the mutex is already locked
-		// and this code is translated to ETIMEDOUT by __libc_native2errno but Posix
-		// says this func should return EBUSY (and some apps check that).
-		if (rc == ERROR_TIMEOUT)
-			return EBUSY;
+#endif
+	if (rc)
 		return(__libc_native2errno(rc));
 
 	/* Return the completion status: */
@@ -151,27 +192,52 @@ pthread_mutex_trylock(pthread_mutex_t * mutex)
 	APIRET		rc = 0;
 	pthread_mutex_t mx;
 
+	/* check NULL */
+	if (!mutex)
+		return EINVAL;
+
 	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-    // Note that we also check for NULL as on *nix pthread_mutex_t is a struct
-    // and some apps don't use PTHREAD_MUTEX_INITIALIZER assuming that the struct
-    // located in a global data segment is initialized to zeroes by the compiler.
+	// Note that we also check for NULL as on *nix pthread_mutex_t is a struct
+	// and some apps don't use PTHREAD_MUTEX_INITIALIZER assuming that the struct
+	// located in a global data segment is initialized to zeroes by the compiler.
 	if (!*mutex || *mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
+		int rc2 = 0;
 		_smutex_request(&mutex_init_lock);
 		if (!*mutex || *mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
-			pthread_mutex_init( mutex, NULL);
+			rc2 = pthread_mutex_init(mutex, NULL);
 		_smutex_release(&mutex_init_lock);
+		if (rc2)
+			return rc2;
 	}
 
 	mx = *mutex;
 
+#if defined(USE_FMUTEX)
+	if (mx->kind == PTHREAD_MUTEX_RECURSIVE && _fmutex_is_owner(&mx->fmutex)) {
+		mx->recursive_count++;
+		if (mx->recursive_count == 0)
+			abort();
+	} else {
+		rc = _fmutex_request(&mx->fmutex, _FMR_IGNINT | _FMR_NOWAIT);
+		if (mx->kind == PTHREAD_MUTEX_RECURSIVE && rc == 0) {
+			if (mx->recursive_count)
+				abort();
+			mx->recursive_count = 1;
+		}
+	}
+	if (rc)
+		return __libc_native2errno(rc);
+#else
 	DOS_NI(rc = DosRequestMutexSem(mx->sem,SEM_IMMEDIATE_RETURN));
 	if (rc) {
 		// SEM_IMMEDIATE_RETURN causes ERROR_TIMEOUT if the mutex is already locked
-		// and this code is translated to ETIMEDOUT by __libc_native2errno but Posix
+		// and this code is translated to ETIMEDOUT by __libc_native2errno but POSIX
 		// says this func should return EBUSY (and some apps check that).
 		if (rc == ERROR_TIMEOUT)
 			return EBUSY;
 		return __libc_native2errno(rc);
+  }
+#endif
 
 	/* Return the completion status: */
 	return (0);
@@ -183,20 +249,39 @@ pthread_mutex_unlock(pthread_mutex_t * mutex)
 	APIRET		rc = 0;
 	pthread_mutex_t mx;
 
+	/* check NULL */
+	if (!mutex)
+		return EINVAL;
+
 	// initialize static semaphores created with PTHREAD_MUTEX_INITIALIZER state.
-    // Note that we also check for NULL as on *nix pthread_mutex_t is a struct
-    // and some apps don't use PTHREAD_MUTEX_INITIALIZER assuming that the struct
-    // located in a global data segment is initialized to zeroes by the compiler.
+	// Note that we also check for NULL as on *nix pthread_mutex_t is a struct
+	// and some apps don't use PTHREAD_MUTEX_INITIALIZER assuming that the struct
+	// located in a global data segment is initialized to zeroes by the compiler.
 	if (!*mutex || *mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER) {
+		int rc2 = 0;
 		_smutex_request(&mutex_init_lock);
 		if (!*mutex || *mutex >= PTHREAD_ERRORCHECK_MUTEX_INITIALIZER)
-			pthread_mutex_init( mutex, NULL);
+			rc2 = pthread_mutex_init(mutex, NULL);
 		_smutex_release(&mutex_init_lock);
+		if (rc2)
+			return rc2;
 	}
 
 	mx = *mutex;
 
+#if defined(USE_FMUTEX)
+	if (mx->kind == PTHREAD_MUTEX_RECURSIVE && _fmutex_is_owner(&mx->fmutex)) {
+		if (!mx->recursive_count)
+			abort();
+		mx->recursive_count--;
+		if (!mx->recursive_count)
+			rc = _fmutex_release(&mx->fmutex);
+	} else {
+		rc = _fmutex_release(&mx->fmutex);
+	}
+#else
 	rc = DosReleaseMutexSem(mx->sem);
+#endif
 	if (rc)
 		return __libc_native2errno(rc);
 

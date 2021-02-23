@@ -1,7 +1,12 @@
 #ifndef __PTHREAD_PRIVATE_H__
 #define __PTHREAD_PRIVATE_H__
 
+#define USE_FMUTEX
+
 #include <sys/types.h>
+#if defined(USE_FMUTEX)
+#include <sys/fmutex.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +55,13 @@ struct pthread_cond_t_ {
 
 struct pthread_mutex_t_
 {
+#if defined(USE_FMUTEX)
+  _fmutex fmutex;
+  int recursive_count;    /* Number of unlocks a thread needs to perform
+                             before the lock is released (recursive
+                             mutexes only). */
+  int kind;               /* Mutex type. */
+#else
 	LONG lock_idx;		/* Provides exclusive access to mutex state
 		via the Interlocked* mechanism.
 		0: unlocked/free.
@@ -62,6 +74,7 @@ struct pthread_mutex_t_
 	int kind;			/* Mutex type. */
 	pthread_t ownerThread;
 	HMTX sem;
+#endif
 };
 
 struct pthread_mutexattr_t_
