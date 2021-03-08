@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <InnoTekLIBC/fork.h>
 
 #include "pthread.h"
 #include "tls.h"
@@ -41,12 +42,20 @@
 
 #define TLS_MINIMUM_AVAILABLE PTHREAD_KEYS_MAX
 
+/*
+ * Global variables. NOTE: must be reset to initial values in forkChild below.
+ */
+
 static _smutex tls_init_lock = 0;
 
-PULONG tls_storage = NULL; /* TLS local storage */
-ULONG tls_bits[2]; /* TLS in-use bits (must match TLS_MINIMUM_AVAILABLE) */
-pthread_mutex_t tls_mutex = (pthread_mutex_t)NULL; /* TLS mutex for in-use bits */
-void (**tls_destructors)(void*); /* TLS destructors */
+static PULONG tls_storage = NULL; /* TLS local storage */
+static ULONG tls_bits[2] = {0}; /* TLS in-use bits (must match TLS_MINIMUM_AVAILABLE) */
+static pthread_mutex_t tls_mutex = (pthread_mutex_t)NULL; /* TLS mutex for in-use bits */
+static void (**tls_destructors)(void*) = NULL; /* TLS destructors */
+
+/*
+ * End of global variables.
+ */
 
 ULONG TlsAlloc(void)
 {
@@ -184,14 +193,14 @@ BOOL TlsSetValue(ULONG index, PVOID val)
   if (*tls_storage == (ULONG)NULL) {
     // allocate memory for indexes
     *tls_storage = (ULONG)calloc(TLS_MINIMUM_AVAILABLE, sizeof(int));
-    DBG_TID("tls_storage %lx\n", *tls_storage);
+    DBG_TID("tls_storage 0x%lx\n", *tls_storage);
   }
 
   if (index >= TLS_MINIMUM_AVAILABLE)
     return FALSE;
 
   ULONG* tls_array = (ULONG*) *tls_storage;
-  DBG_TID("TlsSetValue array %p index %lu -> %p (old)\n", tls_array, index, (void*)tls_array[index]);
+  DBG_TID("TlsSetValue array %p index %lu -> %p (old)\n", tls_array, index, (void*)0);//(void*)tls_array[index]);
   tls_array[index] = (ULONG) val;
   DBG_TID("TlsSetValue array %p index %lu -> %p\n", tls_array, index, val);
 
@@ -299,3 +308,22 @@ void TlsThreadDestructor(void)
     free(tls_array);
   }
 }
+
+static int forkChild(__LIBC_PFORKHANDLE pForkHandle, __LIBC_FORKOP enmOperation)
+{
+  if (enmOperation != __LIBC_FORK_OP_FORK_CHILD)
+    return 0;
+
+  /* Reset global variables to initial values for the forked child */
+
+  tls_init_lock = 0;
+
+  tls_storage = NULL;
+  memset(tls_bits, 0, sizeof(tls_bits));
+  tls_mutex = (pthread_mutex_t)NULL;
+  tls_destructors = NULL;
+
+  return 0;
+}
+
+_FORK_CHILD1(0xFFFFFFFE, forkChild);

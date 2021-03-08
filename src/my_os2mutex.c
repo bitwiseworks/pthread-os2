@@ -45,12 +45,20 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <InnoTekLIBC/errno.h>
-
+#include <InnoTekLIBC/fork.h>
 
 #include "pthread.h"
 #include "pthread_private.h"
 
+/*
+ * Global variables. NOTE: must be reset to initial values in forkChild below.
+ */
+
 static _smutex mutex_init_lock = 0;
+
+/*
+ * End of global variables.
+ */
 
 static int _pthread_mutex_lazy_init(pthread_mutex_t * mutex)
 {
@@ -512,3 +520,16 @@ pthread_mutexattr_gettype (pthread_mutexattr_t * attr, int *kind)
   return (result);
 }
 
+static int forkChild(__LIBC_PFORKHANDLE pForkHandle, __LIBC_FORKOP enmOperation)
+{
+  if (enmOperation != __LIBC_FORK_OP_FORK_CHILD)
+    return 0;
+
+  /* Reset global variables to initial values for the forked child */
+
+  mutex_init_lock = 0;
+
+  return 0;
+}
+
+_FORK_CHILD1(0xFFFFFFFE, forkChild);

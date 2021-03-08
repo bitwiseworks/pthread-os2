@@ -11,19 +11,23 @@
 #include <types.h>
 #include <sys/builtin.h>
 #include <InnoTekLIBC/errno.h>
-
-//#define DEBUG
-
-#ifdef DEBUG
-#include <stdio.h>
-#endif
+#include <InnoTekLIBC/fork.h>
 
 #include "pthread.h"
 #include "pthread_private.h"
 
-static pthread_mutex_t THR_LOCK_thread = PTHREAD_MUTEX_INITIALIZER;
+#include "debug.h"
 
+/*
+ * Global variables. NOTE: must be reset to initial values in forkChild below.
+ */
+
+static pthread_mutex_t THR_LOCK_thread = PTHREAD_MUTEX_INITIALIZER;
 static pthread_key_t THR_self = (pthread_key_t)-1;
+
+/*
+ * End of global variables.
+ */
 
 /**
  * Initiates the pending structures data.
@@ -145,9 +149,9 @@ int pthread_create(pthread_t *thread_id, const pthread_attr_t *attr,
 
 	thread->hThread=(ULONG)_beginthread((void( *)(void *)) pthread_start, NULL,
 										stackSize, (void*) thread);
-#ifdef DEBUG
+#ifdef DEBUG_PRINTF
 	if (thread->hThread == -1)
-		fprintf(stderr, "(#%d) pthread_create: _beginthread failed, errno %d\n", _gettid(), errno);
+		DBG_TID("pthread_create: _beginthread failed, errno %d\n", errno);
 #endif
 
 	if (thread->hThread != (ULONG) -1) {
@@ -169,9 +173,8 @@ int pthread_create(pthread_t *thread_id, const pthread_attr_t *attr,
 		return(error ? error : EINVAL);
 	}
 
-#ifdef DEBUG
-	fprintf(stderr, "(#%d) pthread_create: started thread %lu\n", _gettid(), thread->hThread);
-#endif
+	DBG_TID("pthread_create: started thread %lu\n", thread->hThread);
+
 	// ok
 	return(0);
 }
@@ -275,9 +278,7 @@ pthread_self (void)
 */
 int pthread_join( pthread_t thread, void **status)
 {
-#ifdef DEBUG
-	fprintf(stderr, "(#%d) pthread_join\n", _gettid());
-#endif
+	DBG_TID("pthread_join\n");
 	pthread_t self = (pthread_t) pthread_self();
 	// get data structure
 	pthread_t map = (pthread_t) thread;
@@ -292,14 +293,10 @@ int pthread_join( pthread_t thread, void **status)
 		return EINVAL;
 
 	// now wait for thread end
-#ifdef DEBUG
-	fprintf(stderr, "(#%d) pthread_join map->done %lu, map->hThread %lu\n", _gettid(), map->done, map->hThread);
-#endif
+	DBG_TID("pthread_join: map->done %lu, map->hThread %lu\n", map->done, map->hThread);
 	if (!map->done) {
 		DOS_NI(rc = DosWaitThread(&map->hThread, DCWW_WAIT));
-#ifdef DEBUG
-		fprintf(stderr, "DosWaitThread rc %lu, map->hThread %lu\n", rc, map->hThread);
-#endif
+		DBG_TID("pthread_join: DosWaitThread rc %lu, map->hThread %lu\n", rc, map->hThread);
 		if (rc)
 			return __libc_native2errno(rc);
 	}
@@ -562,3 +559,17 @@ pthread_cancel (pthread_t thread)
 	return (result);
 }
 
+static int forkChild(__LIBC_PFORKHANDLE pForkHandle, __LIBC_FORKOP enmOperation)
+{
+  if (enmOperation != __LIBC_FORK_OP_FORK_CHILD)
+    return 0;
+
+  /* Reset global variables to initial values for the forked child */
+
+  THR_LOCK_thread = PTHREAD_MUTEX_INITIALIZER;
+  THR_self = (pthread_key_t)-1;
+
+  return 0;
+}
+
+_FORK_CHILD1(0xFFFFFFFE, forkChild);
