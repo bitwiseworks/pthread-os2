@@ -297,7 +297,14 @@ int pthread_join( pthread_t thread, void **status)
 	if (!map->done) {
 		DOS_NI(rc = DosWaitThread(&map->hThread, DCWW_WAIT));
 		DBG_TID("pthread_join: DosWaitThread rc %lu, map->hThread %lu\n", rc, map->hThread);
-		if (rc)
+    if (rc == ERROR_INVALID_THREADID && map->done) {
+      /*
+       * The thread has ended after the first map->done check but before
+       * DosWaitThread. This should result in success by POSIX logic.
+       */
+      rc = 0;
+    }
+    else if (rc)
 			return __libc_native2errno(rc);
 	}
 
@@ -306,7 +313,7 @@ int pthread_join( pthread_t thread, void **status)
 		*status = map->rc;
 
 	// free resources
-	free( map);
+	free(map);
 
 	return 0;
 }
