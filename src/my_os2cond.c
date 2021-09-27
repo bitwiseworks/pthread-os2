@@ -66,11 +66,11 @@ int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)
 	cv->waiting = -1;
 	cv->semaphore = -1;
 
-	// right now we only handle the clock attribute
+	// right now we only handle the clock_id attribute
 	if (attr == NULL || *attr == NULL)
-		cv->attr->clock = 0;
+		cv->attr->clock_id = CLOCK_REALTIME;
 	else
-		cv->attr->clock = (*attr)->clock;
+		cv->attr->clock_id = (*attr)->clock_id;
 
 	/* Warp3 FP29 or Warp4 FP4 or better required */
 	rc = DosCreateEventSem( NULL, (PHEV)&cv->semaphore, 0x0800, 0);
@@ -169,7 +169,6 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 			   struct timespec const *abstime)
 {
-	struct timeb curtime;
 	struct timespec ts;
 	long timeout;
 	APIRET	rc = 0;
@@ -187,16 +186,9 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 
 	cv = *cond;
 
-	if (!cv->attr->clock)
-	{
-		_ftime(&curtime);
-		timeout= ((long) (abstime->tv_sec - curtime.time)*1000L +
-			(long)((abstime->tv_nsec/1000) - curtime.millitm)/1000L);
-	}else{
-		clock_gettime (CLOCK_MONOTONIC, &ts);
-		timeout= ((long) (abstime->tv_sec - ts.tv_sec)*1000L +
-			(long)((abstime->tv_nsec - ts.tv_nsec)/1000)/1000L);
-	}
+	clock_gettime (cv->attr->clock_id, &ts);
+	timeout= ((long) (abstime->tv_sec - ts.tv_sec)*1000L +
+		(long)((abstime->tv_nsec - ts.tv_nsec)/1000)/1000L);
 
 	if (timeout < 0)				/* Some safety */
 		timeout = 0L;

@@ -108,10 +108,7 @@ int pthread_condattr_getclock(pthread_condattr_t *attr, clockid_t clock_id)
 		result = EINVAL;
 	}
 
-	if ((*attr)->clock == 1)
-		clock_id = CLOCK_MONOTONIC;
-	else
-		clock_id = CLOCK_REALTIME;
+	clock_id = (*attr)->clock_id;
 
 	return result;
 }
@@ -123,10 +120,7 @@ int pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clock_id)
 	if (clock_id != CLOCK_MONOTONIC && clock_id != CLOCK_REALTIME)
 		result = EINVAL;
 		
-	if (clock_id == CLOCK_MONOTONIC)
-		(*attr)->clock = 1;
-	else
-		(*attr)->clock = 0;
+	(*attr)->clock_id = clock_id;
 
 	return result;
 }

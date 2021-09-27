@@ -53,7 +53,7 @@ struct pthread_attr_t_ {
 };
 
 struct pthread_condattr_t_ {
-    int         clock; // if 0 == we use real_clock; if == 1 we use monotonic_clock
+    clockid_t  clock_id; // CLOCK_MONOTONIC or CLOCK_REALTIME
 };
 
 struct pthread_cond_t_ {
