@@ -97,8 +97,10 @@ int pthread_sigmask(int, const sigset_t *, sigset_t *);
 /*
  * PThread Attribute Functions
  */
-#define pthread_condattr_init(A) 	0
-#define pthread_condattr_destroy(A)	0
+int pthread_condattr_init(pthread_condattr_t *attr);
+int pthread_condattr_destroy(pthread_condattr_t *attr);
+int pthread_condattr_setclock(pthread_condattr_t *attr, clockid_t clock_id);
+int pthread_condattr_getclock(pthread_condattr_t *attr, clockid_t clock_id);
 #define pthread_attr_setscope(A,B)
 int pthread_attr_init(pthread_attr_t *connect_att);
 int pthread_attr_setprio(pthread_attr_t *connect_att,int priority);

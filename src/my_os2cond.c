@@ -44,6 +44,7 @@ int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)
 {
 	APIRET	   rc = 0;
 	pthread_cond_t cv = NULL;
+	pthread_condattr_t cond_attr = NULL;
 
 	if (cond == NULL)
 	{
@@ -56,8 +57,20 @@ int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)
 		return ENOMEM;
 	}
 
+	cv->attr = (pthread_condattr_t) calloc (1, sizeof (*cond_attr));
+	if (cv->attr == NULL)
+	{
+		return ENOMEM;
+	}
+
 	cv->waiting = -1;
 	cv->semaphore = -1;
+
+	// right now we only handle the clock attribute
+	if (attr == NULL || *attr == NULL)
+		cv->attr->clock = 0;
+	else
+		cv->attr->clock = (*attr)->clock;
 
 	/* Warp3 FP29 or Warp4 FP4 or better required */
 	rc = DosCreateEventSem( NULL, (PHEV)&cv->semaphore, 0x0800, 0);
@@ -96,6 +109,12 @@ int pthread_cond_destroy(pthread_cond_t *cond)
 		rc = DosCloseEventSem(cv->semaphore);
 		if (rc == ERROR_SEM_BUSY) DosPostEventSem(cv->semaphore);
 	} while (rc == ERROR_SEM_BUSY);
+
+	if (cv->attr)
+	{
+		(void) free(cv->attr);
+		cv->attr = NULL;
+	}
 
 	(void) free (cv);
 
@@ -146,10 +165,12 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
 	return rval;
 }
 
+
 int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 			   struct timespec const *abstime)
 {
 	struct timeb curtime;
+	struct timespec ts;
 	long timeout;
 	APIRET	rc = 0;
 	int		rval;
@@ -166,9 +187,17 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 
 	cv = *cond;
 
-	_ftime(&curtime);
-	timeout= ((long) (abstime->tv_sec - curtime.time)*1000L +
+	if (!cv->attr->clock)
+	{
+		_ftime(&curtime);
+		timeout= ((long) (abstime->tv_sec - curtime.time)*1000L +
 			(long)((abstime->tv_nsec/1000) - curtime.millitm)/1000L);
+	}else{
+		clock_gettime (CLOCK_MONOTONIC, &ts);
+		timeout= ((long) (abstime->tv_sec - ts.tv_sec)*1000L +
+			(long)((abstime->tv_nsec - ts.tv_nsec)/1000)/1000L);
+	}
+
 	if (timeout < 0)				/* Some safety */
 		timeout = 0L;
 

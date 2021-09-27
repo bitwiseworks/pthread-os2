@@ -48,17 +48,18 @@ struct pthread_t_
 struct pthread_attr_t_ {
     uint32_t 	dwStackSize ;
     uint32_t 	dwCreatingFlag ;
-    int 			priority ;
-    int         	detachstate;
+    int 	priority ;
+    int         detachstate;
 };
 
 struct pthread_condattr_t_ {
-	int 			dummy;
+    int         clock; // if 0 == we use real_clock; if == 1 we use monotonic_clock
 };
 
 struct pthread_cond_t_ {
     int			waiting;
     uint32_t	semaphore;
+    pthread_condattr_t attr;
 };
 
 struct pthread_mutex_t_

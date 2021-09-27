@@ -64,3 +64,7 @@ _pthread_rwlock_rdlock
 _pthread_rwlock_trywrlock
 _pthread_rwlock_wrlock
 _pthread_sigmask
+_pthread_condattr_init
+_pthread_condattr_destroy
+_pthread_condattr_setclock
+_pthread_condattr_getclock
