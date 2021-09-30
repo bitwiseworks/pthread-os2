@@ -147,13 +147,15 @@ int pthread_rwlock_tryrdlock(pthread_rwlock_t *_lock)
   lock = *_lock;
 
   pthread_mutex_lock(&lock->mutex);
-  if (lock->num_active == 0)
+  if (lock->num_active < 0)
   {
-    // Lock is free
-    lock->num_active++;
+    if (pthread_equal(lock->owner, pthread_self()))
+      lock->num_active--;
+    else
+      rc = EBUSY;
   }
   else
-    rc = EBUSY;
+    lock->num_active++;
 
   pthread_mutex_unlock(&lock->mutex);
   return rc;
@@ -179,6 +181,14 @@ int pthread_rwlock_trywrlock(pthread_rwlock_t *_lock)
     lock->num_active = -1;
     lock->owner = pthread_self();
   }
+  else if (lock->num_active < 0)
+  {
+    // Exclusive lock in progress
+    if (pthread_equal(lock->owner, pthread_self()))
+      lock->num_active--;
+    else
+      rc = EBUSY;
+  }
   else
     rc = EBUSY;
 
@@ -193,7 +203,6 @@ int pthread_rwlock_rdlock(pthread_rwlock_t *lock)
 
 int pthread_rwlock_timedrdlock(pthread_rwlock_t *_lock, const struct timespec *abstime)
 {
-  int rc = 0;
   pthread_rwlock_t lock = NULL;
 
   if (*_lock == PTHREAD_RWLOCK_INITIALIZER) {
@@ -212,9 +221,10 @@ int pthread_rwlock_timedrdlock(pthread_rwlock_t *_lock, const struct timespec *a
     {
       if (pthread_equal(lock->owner, pthread_self()))
       {
-        rc = EDEADLK;
+        lock->num_active--;
         break;
       }
+
       //lock->num_shared_waiters++;
       //pthread_mutex_unlock(&lock->mutex);
       //if (waitone(lock->shared_waiters, __abstime2timeout(abstime)) < 0) return errno;
@@ -230,7 +240,7 @@ int pthread_rwlock_timedrdlock(pthread_rwlock_t *_lock, const struct timespec *a
   }
 
   pthread_mutex_unlock(&lock->mutex);
-  return rc;
+  return 0;
 }
 
 int pthread_rwlock_wrlock(pthread_rwlock_t *lock)
@@ -240,7 +250,6 @@ int pthread_rwlock_wrlock(pthread_rwlock_t *lock)
 
 int pthread_rwlock_timedwrlock(pthread_rwlock_t *_lock, const struct timespec *abstime)
 {
-  int rc = 0;
   pthread_rwlock_t lock = NULL;
 
   if (*_lock == PTHREAD_RWLOCK_INITIALIZER) {
@@ -267,7 +276,7 @@ int pthread_rwlock_timedwrlock(pthread_rwlock_t *_lock, const struct timespec *a
       // Exclusive lock in progress
       if (pthread_equal(lock->owner, pthread_self()))
       {
-        rc = EDEADLK;
+        lock->num_active--;
         break;
       }
     }
@@ -282,7 +291,7 @@ int pthread_rwlock_timedwrlock(pthread_rwlock_t *_lock, const struct timespec *a
   }
 
   pthread_mutex_unlock(&lock->mutex);
-  return rc;
+  return 0;
 }
 
 int pthread_rwlock_unlock(pthread_rwlock_t *_lock)

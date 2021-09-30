@@ -115,7 +115,6 @@ struct pthread_rwlock_t_
 };
 
 void TlsThreadDestructor(void);
-int verify_memory (ULONG start, ULONG size);
 
 #ifdef __cplusplus
 } // extern "C"
