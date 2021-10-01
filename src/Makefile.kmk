@@ -23,6 +23,7 @@ pthread_s_SOURCES = \
 	pthread_sigmask.c \
 	pthread_condattr.c \
 	rwlock.c \
+	utils.c \
 	my_os2cond.c \
 	my_os2mutex.c \
 	my_os2thread.c \
