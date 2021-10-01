@@ -1,5 +1,3 @@
-
-#include <stdarg.h>
 #define INCL_DOSSEMAPHORES
 #define INCL_DOSMODULEMGR
 #define INCL_DOSMISC
@@ -9,7 +7,10 @@
 
 
 /* Return TRUE iff the region of memory starting at START is
-   readable. */
+   readable.
+
+   Borrowed from kLIBC src/emx/src/os2/utils.c
+   Copyright (c) 1994-1998 by Eberhard Mattes */
 
 int verify_memory (ULONG start, ULONG size)
 {
