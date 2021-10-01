@@ -6,7 +6,7 @@
 #include <os2emx.h>
 
 
-/* Return TRUE iff the region of memory starting at START is
+/* Return TRUE if the region of memory starting at START is
    readable.
 
    Borrowed from kLIBC src/emx/src/os2/utils.c
