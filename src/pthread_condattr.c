@@ -51,7 +51,10 @@ int pthread_condattr_init(pthread_condattr_t *attr)
 	{
 		return ENOMEM;
 	}
-		
+
+     /* Set magic to protect from older pthread clients (see #16). */
+     attr_result->magic = &pthread_condattr_init;
+
 	*attr = attr_result;
 	
 	return result;

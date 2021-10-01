@@ -53,6 +53,7 @@ struct pthread_attr_t_ {
 };
 
 struct pthread_condattr_t_ {
+    void      *magic;
     clockid_t  clock_id; // CLOCK_MONOTONIC or CLOCK_REALTIME
 };
 

@@ -67,7 +67,8 @@ int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)
 	cv->semaphore = -1;
 
 	// right now we only handle the clock_id attribute
-	if (attr == NULL || *attr == NULL || !verify_memory((ULONG)*attr, sizeof(**attr)))
+	if (attr == NULL || *attr == NULL || !verify_memory((ULONG)*attr, sizeof(**attr)) ||
+		 (*attr)->magic != &pthread_condattr_init)
 		cv->attr->clock_id = CLOCK_REALTIME;
 	else
 		cv->attr->clock_id = (*attr)->clock_id;
