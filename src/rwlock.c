@@ -147,9 +147,9 @@ int pthread_rwlock_tryrdlock(pthread_rwlock_t *_lock)
   lock = *_lock;
 
   pthread_mutex_lock(&lock->mutex);
-  if (lock->num_active == 0)
+  if (lock->num_active >= 0)
   {
-    // Lock is free
+    // Lock is free or acquired by other readers
     lock->num_active++;
   }
   else
